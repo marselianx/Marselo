@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Marselo Anime — Premium Portal</title>
+<title>first squeak in morocco</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -117,6 +117,7 @@
     color:var(--red); margin-bottom:16px;
   }
   .hero-eyebrow::before{content:''; width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1.6s infinite;}
+  @media (prefers-reduced-motion: reduce) { .hero-eyebrow::before { animation: none; } }
   @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.25;}}
 
   .hero-title{
@@ -512,7 +513,7 @@
 
 <footer>
   <div class="f-logo">MARSELO <em>ANIME</em></div>
-  <p>Just a website yfxr worked on.</p>
+  <p>Discovery dashboard powered by the AniList API & TryEmbed Stream Sync Engine.</p>
 </footer>
 
 <script>
@@ -698,6 +699,9 @@ function renderGrid(targetId, items){
     const card = document.createElement('div');
     card.className = 'card';
     card.style.animationDelay = `${i * 0.05}s`;
+    
+    const displayEps = (anime.episodes && anime.episodes > 0) ? `${anime.episodes} episodes` : 'Ongoing';
+    
     card.innerHTML = `
       <div class="card-inner">
         <div class="card-poster">
@@ -713,7 +717,7 @@ function renderGrid(targetId, items){
         </div>
         <div class="card-body">
           <div class="card-title">${title}</div>
-          <div class="card-eps">${anime.episodes || '?'} episodes</div>
+          <div class="card-eps">${displayEps}</div>
         </div>
       </div>
     `;
@@ -747,6 +751,8 @@ async function openDetail(id){
   if(!data || data.length === 0) return;
   const anime = data[0];
   const title = anime.title.english || anime.title.romaji;
+  
+  const displayEps = (anime.episodes && anime.episodes > 0) ? anime.episodes : 'Ongoing / TBD';
 
   document.getElementById('detail-name').innerText = title;
   body.innerHTML = `
@@ -758,7 +764,7 @@ async function openDetail(id){
       <p style="color:var(--text-dim); line-height:1.8; font-size:14px; max-width:640px;">${stripHtml(anime.description) || 'No synopsis recorded.'}</p>
       <div style="display:flex; gap:24px; margin-top:22px; font-size:13px; color:var(--text-dim);">
         <div><strong style="color:var(--text); display:block; font-size:18px;">${anime.averageScore || 'N/A'}%</strong>Score</div>
-        <div><strong style="color:var(--text); display:block; font-size:18px;">${anime.episodes || '?'}</strong>Episodes</div>
+        <div><strong style="color:var(--text); display:block; font-size:18px;">${displayEps}</strong>Episodes</div>
         <div><strong style="color:var(--text); display:block; font-size:18px;">${anime.studios.nodes[0]?.name || 'Independent'}</strong>Studio</div>
       </div>
       <button class="hero-btn" id="modal-watch-btn" style="margin-top:24px; padding: 12px 22px;">
@@ -794,12 +800,17 @@ async function launchWatchScreen(id) {
   if (!trackingData || trackingData.length === 0) return;
   const anime = trackingData[0];
 
-  totalEpisodes = anime.episodes || 12; 
+  totalEpisodes = (anime.episodes && anime.episodes > 0) ? anime.episodes : 12; 
   document.getElementById('watch-anime-title').innerText = anime.title.english || anime.title.romaji;
   document.getElementById('watch-anime-studio').innerText = anime.studios.nodes[0]?.name || 'Independent Studio';
   document.getElementById('watch-anime-score').innerText = anime.averageScore ? `★ ${anime.averageScore}% Rating` : '★ Unrated';
   document.getElementById('watch-anime-desc').innerHTML = anime.description || 'No synopsis files configured.';
-  document.getElementById('sidebar-ep-count').innerText = `${totalEpisodes} Episodes Available`;
+  
+  if (anime.episodes && anime.episodes > 0) {
+    document.getElementById('sidebar-ep-count').innerText = `${totalEpisodes} Episodes Available`;
+  } else {
+    document.getElementById('sidebar-ep-count').innerText = `Ongoing (Showing ${totalEpisodes})`;
+  }
 
   buildEpisodesGrid();
   renderPlayerSource();
