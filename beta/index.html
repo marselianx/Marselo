@@ -32,7 +32,6 @@
     position: relative;
   }
 
-  /* Enhanced Animated Background Texture */
   body::before {
     content: '';
     position: fixed;
@@ -288,7 +287,6 @@
   .empty-state svg{width:44px; height:44px; margin-bottom:16px; color:var(--line);}
   .empty-state h4{font-family:'Bebas Neue'; font-size:26px; color:var(--text); letter-spacing:0.02em; margin-bottom:8px;}
 
-  /* Optimized Watch Context/Layout Elements */
   .watch-container {
     padding: 40px 5vw;
     display: grid;
@@ -640,7 +638,6 @@ function setupEventListeners(){
     }, 400);
   });
 
-  /* Cross-Origin Embedded Architecture Communication Interface */
   window.addEventListener('message', (event) => {
     let payload = event.data;
     if (typeof payload === 'string') {
