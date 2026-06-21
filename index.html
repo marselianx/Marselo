@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>first squeak in morocco</title>
+<title>onyx vular segion pex</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -370,6 +370,26 @@
     margin-bottom: 20px;
   }
 
+  .server-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .server-btn {
+    background: var(--ink);
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .server-btn:hover { border-color: var(--text-dim); color: var(--text); }
+  .server-btn.active { background: #221c38; border-color: var(--violet); color: #fff; }
+
   footer{
     margin-top:90px; border-top:1px solid var(--line);
     padding:32px 5vw 40px;
@@ -484,6 +504,11 @@
         </div>
       </div>
 
+      <div class="server-row">
+        <button class="server-btn active" id="srv-tryembed">Server 1 (TryEmbed)</button>
+        <button class="server-btn" id="srv-megaplay">Server 2 (MegaPlay)</button>
+      </div>
+
       <div class="section" style="padding: 32px 0 0 0;">
         <h1 class="display" id="watch-anime-title" style="font-size: 42px; margin-bottom: 8px;">Title Loading...</h1>
         <div style="display:flex; gap:12px; color: var(--text-dim); font-size: 14px; margin-bottom: 16px;">
@@ -522,6 +547,7 @@ let currentAnimeId = null;
 let currentEpisode = 1;
 let currentFormat = 'sub';
 let totalEpisodes = 12;
+let activeServer = 'tryembed';
 
 const aniListQuery = `
 query ($id: Int, $search: String, $sort: [MediaSort], $genre: String) {
@@ -574,6 +600,9 @@ function setupEventListeners(){
   document.getElementById('track-sub').addEventListener('click', () => toggleAudioFormat('sub'));
   document.getElementById('track-dub').addEventListener('click', () => toggleAudioFormat('dub'));
   
+  document.getElementById('srv-tryembed').addEventListener('click', () => switchStreamServer('tryembed'));
+  document.getElementById('srv-megaplay').addEventListener('click', () => switchStreamServer('megaplay'));
+  
   document.getElementById('ctrl-play').addEventListener('click', () => sendPlayerCommand('play'));
   document.getElementById('ctrl-skip').addEventListener('click', () => sendPlayerCommand('seek', 120));
 
@@ -604,10 +633,16 @@ function setupEventListeners(){
   });
 
   window.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'PLAYER_EVENT') {
-      const dataPayload = event.data.data;
-      const statusElement = document.getElementById('meta-status');
-      
+    let payload = event.data;
+    if (typeof payload === 'string') {
+      try { payload = JSON.parse(payload); } catch(e) { return; }
+    }
+    if (!payload) return;
+
+    const statusElement = document.getElementById('meta-status');
+
+    if (payload.type === 'PLAYER_EVENT') {
+      const dataPayload = payload.data;
       if (dataPayload.paused) {
         statusElement.innerText = "Paused";
         statusElement.style.color = "var(--text-dim)";
@@ -615,11 +650,28 @@ function setupEventListeners(){
         statusElement.innerText = "Live Play";
         statusElement.style.color = "var(--red)";
       }
-      
       document.getElementById('meta-time').innerText = formatTimeLayout(dataPayload.currentTime);
       document.getElementById('meta-duration').innerText = formatTimeLayout(dataPayload.duration);
+    } 
+    else if (payload.type === 'watching-log' || payload.event === 'time') {
+      statusElement.innerText = "Live Play";
+      statusElement.style.color = "var(--red)";
+      const curr = payload.currentTime !== undefined ? payload.currentTime : payload.time;
+      if (curr !== undefined) document.getElementById('meta-time').innerText = formatTimeLayout(curr);
+      if (payload.duration !== undefined) document.getElementById('meta-duration').innerText = formatTimeLayout(payload.duration);
+    }
+    else if (payload.event === 'complete') {
+      statusElement.innerText = "Finished";
+      statusElement.style.color = "var(--text-dim)";
     }
   });
+}
+
+function switchStreamServer(serverKey) {
+  activeServer = serverKey;
+  document.getElementById('srv-tryembed').className = `server-btn ${serverKey === 'tryembed' ? 'active' : ''}`;
+  document.getElementById('srv-megaplay').className = `server-btn ${serverKey === 'megaplay' ? 'active' : ''}`;
+  renderPlayerSource();
 }
 
 function setGridTitle(text){ document.getElementById('main-grid-title').innerText = text; }
@@ -844,7 +896,13 @@ function toggleAudioFormat(format) {
 function renderPlayerSource() {
   document.getElementById('meta-status').innerText = "Initializing...";
   
-  const iFrameSourceUrl = `https://tryembed.us.cc/embed/anime/${currentAnimeId}/${currentEpisode}/${currentFormat}?autoplay=true&autoSkip=true&autoNext=false`;
+  let iFrameSourceUrl = '';
+  if (activeServer === 'tryembed') {
+    iFrameSourceUrl = `https://tryembed.us.cc/embed/anime/${currentAnimeId}/${currentEpisode}/${currentFormat}?autoplay=true&autoSkip=true&autoNext=false`;
+  } else if (activeServer === 'megaplay') {
+    iFrameSourceUrl = `https://megaplay.buzz/stream/ani/${currentAnimeId}/${currentEpisode}/${currentFormat}`;
+  }
+  
   document.getElementById('embed-player').src = iFrameSourceUrl;
 }
 
