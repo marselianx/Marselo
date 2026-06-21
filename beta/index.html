@@ -22,6 +22,7 @@
     --glow-opacity: 0.04;
     --card-glow: rgba(255, 59, 59, 0.2);
     --player-glow: rgba(255, 59, 59, 0.25);
+    --discord: #5865F2;
   }
 
   [data-theme="light"] {
@@ -292,6 +293,19 @@
 
   .modal-body { padding: 40px; }
 
+  /* Discord Pop-up Custom Styles */
+  .discord-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--discord); color: #fff; border: none;
+    padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: all 0.2s ease; text-decoration: none;
+    box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+  }
+  .discord-btn:hover {
+    transform: translateY(-2px); background: #4752C4;
+    box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+  }
+
   .season-selector {
     margin-top: 24px; border-top: 1px solid var(--line); padding-top: 20px;
   }
@@ -525,6 +539,26 @@
   </main>
 </div>
 
+<div class="modal-overlay" id="discord-popup-modal">
+  <div class="modal-window" style="max-width: 480px; text-align: center;">
+    <button class="modal-close-btn" id="discord-close-trigger">✕</button>
+    <div class="modal-body" style="padding: 50px 40px;">
+      <div style="background: rgba(88, 101, 242, 0.1); width: 70px; height: 70px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+        <svg width="36" height="36" viewBox="0 0 127.14 96.36" fill="#5865F2"><path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a74.37,74.37,0,0,0,6.73-10.95,68.43,68.43,0,0,1-10.64-5.12c.91-.67,1.81-1.37,2.65-2.1a75.22,75.22,0,0,0,72.7,0c.85.73,1.75,1.43,2.66,2.1a68.3,68.3,0,0,1-10.65,5.12,74.65,74.65,0,0,0,6.73,10.95,105.48,105.48,0,0,0,31.62-18.83C129.54,49.8,123.63,27,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/></svg>
+      </div>
+      <h2 class="display" style="font-size: 36px; margin-bottom: 12px; line-height: 1.1;">Join Our Community</h2>
+      <p style="color: var(--text-dim); font-size: 14.5px; line-height: 1.6; margin-bottom: 32px;">Connect with other anime fans, get immediate updates on new releases, and stream with the community on our official server!</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <a href="https://discord.gg/9gCYqCuhvg" target="_blank" class="discord-btn" id="discord-join-btn">
+          Join Discord Server
+        </a>
+        <button class="control-btn" id="discord-cancel-btn" style="justify-content: center; width: 100%;">Maybe Later</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="details-popup-modal">
   <div class="modal-window">
     <button class="modal-close-btn" id="modal-close-trigger">✕</button>
@@ -674,6 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildMarquee();
   loadHomepageData();
   setupEventListeners();
+  openDiscordModal(); // Trigger Discord pop-up right on load
 });
 
 function buildGenreRow(){
@@ -703,6 +738,14 @@ function setupEventListeners(){
   document.getElementById('modal-close-trigger').addEventListener('click', closeModal);
   document.getElementById('details-popup-modal').addEventListener('click', (e) => {
     if(e.target === document.getElementById('details-popup-modal')) closeModal();
+  });
+
+  // Discord Modal Event Listeners
+  document.getElementById('discord-close-trigger').addEventListener('click', closeDiscordModal);
+  document.getElementById('discord-cancel-btn').addEventListener('click', closeDiscordModal);
+  document.getElementById('discord-join-btn').addEventListener('click', closeDiscordModal);
+  document.getElementById('discord-popup-modal').addEventListener('click', (e) => {
+    if(e.target === document.getElementById('discord-popup-modal')) closeDiscordModal();
   });
 
   document.getElementById('header-settings-btn').addEventListener('click', openSettingsModal);
@@ -952,7 +995,7 @@ async function openDetailModal(id){
     <div class="detail-grid-layout">
       <img src="${anime.coverImage.large}" style="width:100%; border-radius:16px; border:1px solid var(--line); box-shadow: 0 15px 30px rgba(0,0,0,0.3), 0 0 20px var(--card-glow);" alt="${title}">
       <div>
-        <h2 class="display" style="font-size: 38px; margin-bottom: 12px; line-height:1.1; color: var(--text);">marselo anime</h2>
+        <h2 class="display" style="font-size: 38px; margin-bottom: 12px; line-height:1.1; color: var(--text);">Do you want to watch this series?</h2>
         <h4 style="font-size: 16px; font-weight: 700; color: var(--red); margin-bottom: 16px;">${title}</h4>
         
         <p style="color:var(--text-dim); line-height:1.7; font-size:14.5px; max-height: 120px; overflow-y: auto; padding-right: 4px;">${stripHtml(anime.description) || 'No synopsis recorded.'}</p>
@@ -989,7 +1032,19 @@ async function openDetailModal(id){
 
 function closeModal(){
   document.getElementById('details-popup-modal').classList.remove('show');
-  if(!document.getElementById('settings-popup-modal').classList.contains('show')) {
+  if(!document.getElementById('settings-popup-modal').classList.contains('show') && !document.getElementById('discord-popup-modal').classList.contains('show')) {
+    document.body.style.overflow = '';
+  }
+}
+
+function openDiscordModal() {
+  document.getElementById('discord-popup-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDiscordModal() {
+  document.getElementById('discord-popup-modal').classList.remove('show');
+  if(!document.getElementById('details-popup-modal').classList.contains('show') && !document.getElementById('settings-popup-modal').classList.contains('show')) {
     document.body.style.overflow = '';
   }
 }
@@ -1001,7 +1056,7 @@ function openSettingsModal() {
 
 function closeSettingsModal() {
   document.getElementById('settings-popup-modal').classList.remove('show');
-  if(!document.getElementById('details-popup-modal').classList.contains('show')) {
+  if(!document.getElementById('details-popup-modal').classList.contains('show') && !document.getElementById('discord-popup-modal').classList.contains('show')) {
     document.body.style.overflow = '';
   }
 }
