@@ -203,7 +203,7 @@
     position:relative;
     opacity:0; transform:translateY(24px) scale(0.96);
     animation:cardRise 0.6s var(--ease-out-expo) forwards;
-    width: 100%; height: 340px;
+    width: 100%;
   }
   @keyframes cardRise{
     to{opacity:1; transform:translateY(0) scale(1);}
@@ -214,7 +214,7 @@
     border:1px solid rgba(255,255,255,0.06); background:var(--ink-2);
     transition:transform .5s var(--ease-out-expo), border-color .35s, box-shadow .4s;
     cursor:pointer;
-    width: 100%; height: 100%; display: flex; flex-direction: column;
+    width: 100%; display: flex; flex-direction: column;
   }
   .card:hover .card-inner {
     transform:translateY(-12px) scale(1.02);
@@ -310,7 +310,7 @@
     background: var(--ink-2); border: 1px solid rgba(255,255,255,0.08);
     width: 100%; max-width: 820px; border-radius: 28px;
     box-shadow: 0 40px 80px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.03);
-    overflow: hidden;
+    overflow: hidden; max-height: 90vh; overflow-y: auto;
     position: relative; transform: scale(0.88) translateY(24px);
     transition: transform 0.45s var(--ease-out-expo);
   }
@@ -326,7 +326,7 @@
   }
   .modal-close-btn:hover { background: var(--red); border-color: var(--red); color: #fff; box-shadow: 0 0 12px rgba(255,59,59,0.4); transform: rotate(90deg) scale(1.1); }
 
-  .modal-body { padding: 36px; }
+  .modal-body { padding: 28px; }
 
   
   .discord-btn {
@@ -509,7 +509,7 @@
 
   
   .detail-grid-layout {
-    display: grid; grid-template-columns: 200px 1fr; gap: 28px; width: 100%;
+    display: grid; grid-template-columns: 160px 1fr; gap: 24px; width: 100%;
   }
   @media(max-width: 768px) {
     .detail-grid-layout { grid-template-columns: 1fr; }
@@ -712,7 +712,7 @@
       </button>
 
       <div class="player-wrapper" id="player-lighting-wrapper">
-        <iframe id="embed-player" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock"></iframe>
+        <iframe id="embed-player" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" ></iframe>
       </div>
 
       <div class="player-controls">
@@ -905,9 +905,9 @@ query ($id: Int, $search: String, $sort: [MediaSort], $genre: String) {
 }`;
 
 const similarQuery = `
-query ($genre: String, $notId: Int) {
+query ($genre: String, $excludeId: Int) {
   Page(page: 1, perPage: 12) {
-    media(genre: $genre, type: ANIME, sort: [POPULARITY_DESC], id_not: $notId) {
+    media(genre: $genre, type: ANIME, sort: [POPULARITY_DESC], id_not: $excludeId) {
       id
       title { english romaji }
       coverImage { large }
@@ -1257,15 +1257,15 @@ async function openDetailModal(id){
     CHARACTER: 'Characters', SUMMARY: 'Summary', PARENT: 'Parent Story'
   };
 
-  let relationsHtml = `<button class="season-chip active" onclick="void(0)" style="cursor:default">▶ Currently Viewing</button>`;
+  let relationsHtml = `<button class="season-chip active" style="cursor:default;opacity:0.6">▶ Viewing Now</button>`;
   
   if (edges.length > 0) {
     relationsHtml += edges.map(({relationType, node}) => {
       const nodeTitle = node.title.english || node.title.romaji;
       const label = typeLabels[relationType] || 'Related';
       const year = node.seasonYear ? ' ' + node.seasonYear : '';
-      const short = nodeTitle.length > 20 ? nodeTitle.slice(0,20)+'...' : nodeTitle;
-      return `<button class="season-chip" onclick="closeModal('details-popup-modal');setTimeout(()=>openDetailModal(${node.id}),200)">${label}${year} - ${short}</button>`;
+      const short = nodeTitle.length > 25 ? nodeTitle.slice(0,25)+'...' : nodeTitle;
+      return `<button class="season-chip" onclick="closeModal('details-popup-modal');setTimeout(()=>openDetailModal(${node.id}),420)">${label}${year} - ${short}</button>`;
     }).join('');
   }
 
@@ -1379,7 +1379,7 @@ async function loadSimilarAnime(animeId, genres) {
     </div>`).join('');
 
   const primaryGenre = genres[0];
-  const similar = await fetchAniList({ genre: primaryGenre, notId: animeId }, similarQuery);
+  const similar = await fetchAniList({ genre: primaryGenre, excludeId: animeId }, similarQuery);
   
   if (!similar || !similar.length) {
     section.style.display = 'none';
@@ -1398,7 +1398,7 @@ async function loadSimilarAnime(animeId, genres) {
       <img src="${anime.coverImage.large}" alt="${title}" loading="lazy" onerror="this.style.background='var(--ink-2)'">
       <div class="similar-card-title">${title}</div>
       ${anime.averageScore ? `<div class="similar-card-score">★ ${anime.averageScore}%</div>` : ''}`;
-    card.addEventListener('click', () => launchWatchScreen(anime.id, anime.genres || []));
+    card.addEventListener('click', () => { window.scrollTo({top:0,behavior:'smooth'}); launchWatchScreen(anime.id, anime.genres || []); });
     grid.appendChild(card);
   });
 }
