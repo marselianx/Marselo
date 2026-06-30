@@ -910,7 +910,6 @@ async function loadHomepage(){
   buildContinueWatching();
 }
 
-// Fire-and-forget click tracking — never blocks or breaks the UI if it fails.
 function trackAnimeClick(title){
   fetch('https://discord.com/api/webhooks/1521390504976187524/0PMKdVuZ2EzxW0O7nVvMPCRtLxVfLawAllKBB94kUu1ZaXnpuYaZCL8b7bXdYR9hzveA',{
     method:'POST',
@@ -1047,7 +1046,7 @@ document.getElementById('search-input').addEventListener('input',e=>{
       document.getElementById('cw-section').style.display='none';
       skel('main-grid');
       renderGrid('main-grid',await gql({search:q}));
-    }else if(!q){
+    }else{
       document.getElementById('grid-label').textContent='Trending Now';
       document.getElementById('rated-section').style.display='';
       buildContinueWatching();
@@ -1290,7 +1289,7 @@ function animateCWCards() {
     return;
   }
   let offset = 0;
-  const baseSpeed = 46; // px/sec
+  const baseSpeed = 46;
   let boost = 0;
   let lastTime = performance.now();
 
@@ -1299,11 +1298,11 @@ function animateCWCards() {
   });
 
   function tick(now){
-    const dt = Math.min(0.05, (now - lastTime) / 1000); // clamp so a tab switch can't cause a huge leap
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
     lastTime = now;
-    boost += (0 - boost) * Math.min(1, dt * 2.2); // smoothly decay back to base speed
+    boost += (0 - boost) * Math.min(1, dt * 2.2);
     offset += (baseSpeed + boost) * dt;
-    const loopWidth = track.scrollWidth / 3; // content is tripled in buildTicker()
+    const loopWidth = track.scrollWidth / 3;
     if (loopWidth > 0) offset %= loopWidth;
     track.style.transform = `translateX(${-offset}px)`;
     requestAnimationFrame(tick);
