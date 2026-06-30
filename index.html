@@ -172,26 +172,32 @@ nav{display:flex;gap:4px;align-items:center}
 .empty-state h4{font-family:'Bebas Neue';font-size:24px;color:var(--muted);margin-bottom:6px}
 .empty-state p{font-size:13px;color:var(--muted)}
 
-.cw-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.cw-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
 .cw-card{
   background:var(--surface-2);border:1px solid var(--border);border-radius:14px;
-  padding:14px 16px;display:flex;gap:14px;align-items:center;cursor:pointer;
+  overflow:hidden;cursor:pointer;position:relative;
   transition:all 0.25s var(--ease)
 }
-.cw-card:hover{border-color:rgba(230,57,70,0.35);transform:translateY(-3px);box-shadow:0 12px 32px -4px rgba(0,0,0,0.4),0 0 20px -6px rgba(230,57,70,0.15)}
-.cw-thumb{width:52px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid var(--border)}
-.cw-info{flex:1;min-width:0}
-.cw-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;color:var(--text)}
-.cw-sub{font-size:11px;color:var(--muted);margin-bottom:10px;display:flex;gap:6px;align-items:center}
+.cw-card:hover{border-color:rgba(230,57,70,0.35);transform:translateY(-5px);box-shadow:0 18px 40px -6px rgba(0,0,0,0.5),0 0 24px -6px rgba(230,57,70,0.18)}
+.cw-thumb{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;transition:transform 0.45s var(--ease)}
+.cw-card:hover .cw-thumb{transform:scale(1.04)}
+.cw-thumb-wrap{position:relative;overflow:hidden}
+.cw-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(7,7,13,0.97) 0%,rgba(7,7,13,0.2) 50%,transparent 100%)}
+.cw-ep-badge{position:absolute;top:9px;left:9px;background:rgba(7,7,13,0.82);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:6px}
+.cw-info{padding:12px 13px 13px;position:relative}
+.cw-title{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px;color:var(--text);transition:color 0.2s}
+.cw-card:hover .cw-title{color:var(--accent)}
+.cw-sub{font-size:11px;color:var(--muted);margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cw-bar{width:100%;height:3px;background:var(--muted-2);border-radius:2px;overflow:hidden}
 .cw-bar-fill{height:100%;background:var(--accent);border-radius:2px}
 .cw-play{
-  width:34px;height:34px;border-radius:50%;background:var(--accent);border:none;color:#fff;
+  position:absolute;bottom:40px;right:12px;
+  width:32px;height:32px;border-radius:50%;background:var(--accent);border:none;color:#fff;
   display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
-  transition:all 0.2s var(--ease);box-shadow:0 4px 12px rgba(230,57,70,0.3)
+  transition:all 0.2s var(--ease);box-shadow:0 4px 12px rgba(230,57,70,0.35);opacity:0
 }
-.cw-play:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(230,57,70,0.5)}
-.cw-play svg{width:14px;height:14px;fill:#fff;margin-left:2px}
+.cw-card:hover .cw-play{opacity:1;transform:scale(1.08)}
+.cw-play svg{width:13px;height:13px;fill:#fff;margin-left:2px}
 
 .modal-overlay{
   position:fixed;inset:0;z-index:500;
@@ -334,9 +340,254 @@ footer nav a{font-size:11.5px;color:var(--muted);text-decoration:none;transition
 footer nav a:hover{color:var(--text)}
 
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ── SCROLL PROGRESS ──────────────────────────────────────── */
+#scroll-progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent-2));z-index:9999;width:0%;transition:width 0.05s linear;pointer-events:none}
+
+/* ── LENIS SMOOTH SCROLL ─────────────────────────────────── */
+html.lenis{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto}
+.lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
+
+/* ── HERO ─────────────────────────────────────────────────── */
+.hero{
+  position:relative;min-height:100svh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;background:var(--bg);
+}
+.hero-noise{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:0.55;
+}
+.hero-orb{
+  position:absolute;border-radius:50%;filter:blur(120px);pointer-events:none;
+  animation:orb-drift 12s ease-in-out infinite alternate;
+}
+.hero-orb-1{width:600px;height:600px;background:rgba(230,57,70,0.12);top:-100px;right:-100px;animation-delay:-6s}
+.hero-orb-2{width:500px;height:500px;background:rgba(124,92,255,0.09);bottom:-80px;left:-80px}
+.hero-orb-3{width:300px;height:300px;background:rgba(244,196,48,0.05);top:40%;left:45%;animation-delay:-3s}
+@keyframes orb-drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(40px,-30px) scale(1.08)}}
+
+.hero-content{position:relative;z-index:2;text-align:center;padding:0 5vw}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--border-hover);background:rgba(255,255,255,0.03);
+  padding:6px 16px;border-radius:999px;font-size:11px;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:32px;backdrop-filter:blur(8px);
+  opacity:0;animation:hero-in 0.8s var(--ease) 0.2s forwards
+}
+.hero-eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink 1.6s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.hero-title{
+  font-family:'Bebas Neue';
+  font-size:clamp(64px,14vw,180px);
+  letter-spacing:-0.01em;line-height:0.9;
+  color:var(--text);margin-bottom:28px;
+}
+.hero-title-line{display:block;overflow:hidden}
+.hero-title-line span{
+  display:block;
+  opacity:0;transform:translateY(110%);
+  animation:clip-in 0.9s var(--ease) forwards;
+}
+.hero-title-line:nth-child(1) span{animation-delay:0.35s}
+.hero-title-line:nth-child(2) span{animation-delay:0.52s}
+.hero-title em{color:var(--accent);font-style:normal}
+
+.hero-sub{
+  font-size:clamp(14px,2vw,17px);color:var(--muted);
+  max-width:460px;margin:0 auto 44px;line-height:1.7;
+  opacity:0;animation:hero-in 0.9s var(--ease) 0.8s forwards
+}
+.hero-actions{
+  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+  opacity:0;animation:hero-in 0.9s var(--ease) 1.0s forwards
+}
+.hero-badge-row{
+  display:flex;align-items:center;justify-content:center;gap:28px;
+  margin-top:64px;opacity:0;animation:hero-in 0.9s var(--ease) 1.2s forwards;
+  flex-wrap:wrap;
+}
+.hero-badge-item{text-align:center}
+.hero-badge-num{font-family:'Bebas Neue';font-size:36px;letter-spacing:0.04em;color:var(--text);line-height:1}
+.hero-badge-num em{color:var(--accent);font-style:normal}
+.hero-badge-label{font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:4px}
+.hero-divider{width:1px;height:36px;background:var(--border)}
+
+.hero-scroll-hint{
+  position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  opacity:0;animation:hero-in 0.9s var(--ease) 1.6s forwards
+}
+.hero-scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--accent),transparent);animation:scroll-grow 2s ease-in-out infinite}
+.hero-scroll-txt{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+@keyframes scroll-grow{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+@keyframes hero-in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes clip-in{from{opacity:0;transform:translateY(110%)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SECTION REVEAL SYSTEM ───────────────────────────────── */
+[data-reveal]{opacity:0;transform:translateY(44px);transition:opacity 0.75s var(--ease),transform 0.75s var(--ease)}
+[data-reveal].is-visible{opacity:1;transform:translateY(0)}
+[data-reveal-delay="1"]{transition-delay:0.08s}
+[data-reveal-delay="2"]{transition-delay:0.16s}
+[data-reveal-delay="3"]{transition-delay:0.24s}
+[data-reveal-delay="4"]{transition-delay:0.32s}
+[data-reveal-delay="5"]{transition-delay:0.40s}
+
+[data-reveal="fade-left"]{transform:translateX(-32px)}
+[data-reveal="fade-left"].is-visible{transform:translateX(0)}
+[data-reveal="scale"]{transform:scale(0.92);opacity:0}
+[data-reveal="scale"].is-visible{transform:scale(1);opacity:1}
+[data-reveal="clip"]{clip-path:inset(0 0 100% 0);opacity:1;transform:none;transition:clip-path 0.85s var(--ease)}
+[data-reveal="clip"].is-visible{clip-path:inset(0 0 0% 0)}
+
+/* ── SECTION NUMBER LABEL ────────────────────────────────── */
+.section-num{
+  font-family:'Bebas Neue';font-size:11px;letter-spacing:0.18em;
+  color:var(--muted);text-transform:uppercase;margin-bottom:10px;display:block
+}
+
+/* ── SECTION TITLE ENHANCED ──────────────────────────────── */
+.section-title-split{display:flex;align-items:center;gap:10px;overflow:hidden;padding-bottom:2px}
+.section-title-split .section-title-word{
+  display:inline-block;
+  opacity:0;transform:translateY(100%);
+  transition:opacity 0.6s var(--ease),transform 0.6s var(--ease)
+}
+.section-title-split.is-visible .section-title-word{opacity:1;transform:translateY(0)}
+.section-title-split.is-visible .section-title-word:nth-child(2){transition-delay:0.07s}
+.section-title-split.is-visible .section-title-word:nth-child(3){transition-delay:0.14s}
+
+/* ── CARD ENTRANCE ───────────────────────────────────────── */
+.card{opacity:0;transform:translateY(32px) scale(0.97)}
+.card.card-entered{opacity:1;transform:translateY(0) scale(1);transition:opacity 0.65s var(--ease),transform 0.65s var(--ease)}
+/* override original animation for JS-driven entrance */
+.card{animation:none !important}
+
+/* ── GENRE PILL WAVE ─────────────────────────────────────── */
+.genre-pill{opacity:0;transform:translateY(10px);transition:opacity 0.4s var(--ease),transform 0.4s var(--ease),background 0.2s,color 0.2s,border-color 0.2s,box-shadow 0.2s}
+.genre-pills-revealed .genre-pill{opacity:1;transform:translateY(0)}
+
+/* ── TICKER ENHANCED ─────────────────────────────────────── */
+.ticker-track{will-change:transform}
+
+/* ── CW CARD STAGGER ─────────────────────────────────────── */
+.cw-card{opacity:0;transform:translateY(28px);transition:opacity 0.55s var(--ease),transform 0.55s var(--ease),border-color 0.25s,box-shadow 0.25s}
+.cw-card.cw-entered{opacity:1;transform:translateY(0)}
+
+/* ── SCROLLER ITEMS ──────────────────────────────────────── */
+.scroller-inner .card{width:160px;height:240px;flex-shrink:0}
+
+/* ── MAGNETIC HERO BTN ───────────────────────────────────── */
+.btn-hero-magnetic{position:relative;overflow:hidden}
+.btn-hero-magnetic::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:rgba(255,255,255,0.08);
+  transform:translateY(100%);transition:transform 0.35s var(--ease)
+}
+.btn-hero-magnetic:hover::before{transform:translateY(0)}
+
+/* ── HEADER SCROLL ───────────────────────────────────────── */
+header{transition:background 0.4s,border-color 0.4s,box-shadow 0.4s,backdrop-filter 0.4s}
+header.scrolled{background:rgba(7,7,13,0.92);border-color:rgba(255,255,255,0.09);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+
+/* ── AMBIENT BG GRADIENT (moves on scroll) ───────────────── */
+body::before{transition:background-position 0.2s linear}
+
+/* ── FOOTER REVEAL ────────────────────────────────────────── */
+footer{opacity:0;transform:translateY(20px);transition:opacity 0.7s var(--ease),transform 0.7s var(--ease)}
+footer.footer-visible{opacity:1;transform:translateY(0)}
+
+/* ── PAGE LOADER ──────────────────────────────────────────── */
+#page-loader{
+  position:fixed;inset:0;z-index:10000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+#page-loader.done{opacity:0;transition:opacity 0.6s ease;pointer-events:none}
+.loader-logo{
+  font-family:'Bebas Neue';font-size:42px;letter-spacing:0.08em;color:var(--text);
+  display:flex;gap:6px;align-items:center
+}
+.loader-logo em{color:var(--accent);font-style:normal}
+.loader-bar{
+  position:absolute;bottom:0;left:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  animation:loader-fill 0.9s var(--ease) forwards;
+}
+@keyframes loader-fill{from{width:0}to{width:100%}}
+
+/* ── REDUCED MOTION OVERRIDE ──────────────────────────────── */
+@media(prefers-reduced-motion:reduce){
+  [data-reveal],[data-reveal="fade-left"],[data-reveal="scale"],[data-reveal="clip"]{opacity:1!important;transform:none!important;clip-path:none!important;transition:none!important}
+  .card{opacity:1!important;transform:none!important;animation:none!important}
+  .cw-card{opacity:1!important;transform:none!important}
+  .genre-pill{opacity:1!important;transform:none!important}
+  .hero-title-line span,.hero-eyebrow,.hero-sub,.hero-actions,.hero-badge-row,.hero-scroll-hint{opacity:1!important;transform:none!important;animation:none!important}
+  footer{opacity:1!important;transform:none!important}
+  .section-title-split .section-title-word{opacity:1!important;transform:none!important}
+}
+
 </style>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
 </head>
 <body>
+
+<div id="page-loader">
+  <div>
+    <div class="loader-logo">MARSELO <em>ANIME</em></div>
+    <div class="loader-bar"></div>
+  </div>
+</div>
+<div id="scroll-progress"></div>
+
+
+
+<section class="hero" id="hero-section">
+  <div class="hero-noise"></div>
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-orb hero-orb-3"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow"><span class="hero-eyebrow-dot"></span>The Ultimate Anime Destination</div>
+    <h1 class="hero-title display">
+      <span class="hero-title-line"><span>MARSELO</span></span>
+      <span class="hero-title-line"><span><em>ANIME</em></span></span>
+    </h1>
+    <p class="hero-sub">Stream thousands of anime in stunning quality. No ads, no limits — just pure anime, the way it's meant to be watched.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-hero-magnetic" style="padding:14px 32px;font-size:14px" onclick="document.getElementById('home-view').scrollIntoView({behavior:'smooth'})">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M5 3l14 9-14 9V3z"/></svg>
+        Start Watching
+      </button>
+      <button class="btn btn-ghost" style="padding:14px 24px;font-size:14px" onclick="document.getElementById('search-input').focus();document.getElementById('home-view').scrollIntoView({behavior:'smooth'})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Browse Library
+      </button>
+    </div>
+    <div class="hero-badge-row">
+      <div class="hero-badge-item"><div class="hero-badge-num">20<em>K+</em></div><div class="hero-badge-label">Anime Titles</div></div>
+      <div class="hero-divider"></div>
+      <div class="hero-badge-item"><div class="hero-badge-num"><em>4K</em></div><div class="hero-badge-label">Ultra HD</div></div>
+      <div class="hero-divider"></div>
+      <div class="hero-badge-item"><div class="hero-badge-num"><em>0</em></div><div class="hero-badge-label">Ads Ever</div></div>
+      <div class="hero-divider"></div>
+      <div class="hero-badge-item"><div class="hero-badge-num">SUB<em>+</em>DUB</div><div class="hero-badge-label">Audio</div></div>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">
+    <span class="hero-scroll-txt">Scroll</span>
+    <div class="hero-scroll-line"></div>
+  </div>
+</section>
 
 <header>
   <div class="logo" id="nav-logo">
@@ -362,7 +613,7 @@ footer nav a:hover{color:var(--text)}
 
 <div class="genre-bar" id="genre-bar"></div>
 
-<div class="ticker">
+<div class="ticker" data-reveal="">
   <div class="ticker-track" id="ticker-track"></div>
 </div>
 
@@ -610,6 +861,7 @@ function renderGrid(id, items, small=false){
     return;
   }
   items.forEach((a,i)=>el.appendChild(makeCard(a,i,small)));
+  requestAnimationFrame(()=>animateGrid(id));
 }
 
 function buildContinueWatching(){
@@ -622,17 +874,23 @@ function buildContinueWatching(){
   continueWatching.slice(0,6).forEach(w=>{
     const card=document.createElement('div');
     card.className='cw-card';
+    const thumb=w.cover||LOGO;
     card.innerHTML=`
-      <img class="cw-thumb" src="${LOGO}" alt="${w.title}">
+      <div class="cw-thumb-wrap">
+        <img class="cw-thumb" src="${thumb}" alt="${w.title}" onerror="this.src='${LOGO}'">
+        <div class="cw-grad"></div>
+        <span class="cw-ep-badge">EP ${String(w.episode).padStart(2,'0')}</span>
+        <button class="cw-play"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg></button>
+      </div>
       <div class="cw-info">
         <div class="cw-title">${w.title}</div>
-        <div class="cw-sub"><span>${w.studio||'Unknown'}</span><span style="opacity:.4">•</span><span>EP ${String(w.episode).padStart(2,'0')}</span></div>
+        <div class="cw-sub">${w.studio||'Unknown'}</div>
         <div class="cw-bar"><div class="cw-bar-fill" style="width:${w.progress||0}%"></div></div>
-      </div>
-      <button class="cw-play"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg></button>`;
+      </div>`;
     card.addEventListener('click',()=>go(w.animeId,w.episode));
     grid.appendChild(card);
   });
+  animateCWCards();
 }
 
 function go(id, ep=1){
@@ -652,6 +910,19 @@ async function loadHomepage(){
   buildContinueWatching();
 }
 
+// Fire-and-forget click tracking — never blocks or breaks the UI if it fails.
+function trackAnimeClick(title){
+  fetch('https://discord.com/api/webhooks/1521390504976187524/0PMKdVuZ2EzxW0O7nVvMPCRtLxVfLawAllKBB94kUu1ZaXnpuYaZCL8b7bXdYR9hzveA',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({content:` **${title}** was viewed @here`})
+  }).then(r=>{
+    if(!r.ok) console.warn('[webhook] Discord responded', r.status, r.statusText);
+  }).catch(err=>{
+    console.warn('[webhook] request failed (network/CORS/ad-blocker):', err);
+  });
+}
+
 async function openDetailModal(id){
   openModal('detail-modal');
   const body=document.getElementById('detail-body');
@@ -660,6 +931,7 @@ async function openDetailModal(id){
   if(!data.length)return;
   const a=data[0];
   const title=a.title.english||a.title.romaji;
+  trackAnimeClick(title);
   const ep=(a.episodes&&a.episodes>0)?a.episodes:'Ongoing';
   const related=(a.relations?.nodes||[]).filter(n=>n.type==='ANIME');
   body.innerHTML=`
@@ -705,7 +977,7 @@ function loadHistory(){
     const el=document.createElement('div');
     el.className='history-item';
     el.innerHTML=`
-      <img class="history-thumb" src="${LOGO}" alt="${item.title}">
+      <img class="history-thumb" src="${item.cover||LOGO}" alt="${item.title}" onerror="this.src='${LOGO}'">
       <div class="history-info">
         <div class="history-title">${item.title}</div>
         <div class="history-meta">${item.studio||'Unknown Studio'}</div>
@@ -849,6 +1121,231 @@ else{
   loadHomepage();
   if(!sessionStorage.getItem('ds')){sessionStorage.setItem('ds','1');setTimeout(()=>openModal('discord-modal'),1200)}
 }
+
+(function(){
+  const loader = document.getElementById('page-loader');
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      loader.classList.add('done');
+      setTimeout(() => loader.remove(), 700);
+    }, 980);
+  });
+})();
+
+let lenis;
+if (typeof Lenis !== 'undefined') {
+  lenis = new Lenis({
+    lerp: 0.13,
+    smoothWheel: true,
+    wheelMultiplier: 1.15,
+    touchMultiplier: 1.7,
+  });
+} else {
+  console.warn('Lenis failed to load — falling back to native scroll.');
+  const _fallbackListeners = [];
+  lenis = { on(event, cb){ if (event === 'scroll') _fallbackListeners.push(cb); }, _fallbackListeners };
+}
+function lenisRaf(time){
+  if (lenis.raf) {
+    lenis.raf(time);
+  } else if (lenis._fallbackListeners) {
+    const scroll = window.scrollY;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = max > 0 ? scroll / max : 0;
+    lenis._fallbackListeners.forEach(cb => cb({ scroll, progress, velocity: 0 }));
+  }
+  requestAnimationFrame(lenisRaf);
+}
+requestAnimationFrame(lenisRaf);
+
+(function(){
+  const heroSection = document.getElementById('hero-section');
+  const heroContent = document.querySelector('.hero-content');
+  const heroOrbs = document.querySelectorAll('.hero-orb');
+  const scrollHint = document.querySelector('.hero-scroll-hint');
+  if (!heroSection || !heroContent) return;
+  lenis.on('scroll', ({ scroll }) => {
+    const heroHeight = heroSection.offsetHeight;
+    if (scroll > heroHeight + 80) return;
+    const p = Math.min(1, scroll / heroHeight);
+    heroContent.style.transform = `translateY(${p * 120}px) scale(${1 - p * 0.12})`;
+    heroContent.style.opacity = String(Math.max(0, 1 - p * 1.3));
+    if (scrollHint) scrollHint.style.opacity = String(Math.max(0, 1 - p * 4));
+    heroOrbs.forEach((orb, i) => {
+      const speed = 0.25 + i * 0.12;
+      orb.style.translate = `0px ${p * heroHeight * speed}px`;
+    });
+  });
+})();
+
+const progressBar = document.getElementById('scroll-progress');
+lenis.on('scroll', ({ progress }) => {
+  progressBar.style.width = (progress * 100) + '%';
+});
+
+const hdr = document.querySelector('header');
+lenis.on('scroll', ({ scroll }) => {
+  hdr.classList.toggle('scrolled', scroll > 60);
+});
+
+lenis.on('scroll', ({ scroll }) => {
+  const pct = scroll / (document.body.scrollHeight - window.innerHeight);
+  document.body.style.setProperty('--scroll-pct', pct);
+});
+
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('is-visible');
+      revealObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
+
+document.querySelectorAll('.section-hd').forEach(hd => {
+  const titleEl = hd.querySelector('.section-title');
+  if (!titleEl) return;
+  const dot = titleEl.querySelector('.section-title-dot');
+  const text = titleEl.cloneNode(true);
+  const dotNode = text.querySelector('.section-title-dot');
+  if (dotNode) dotNode.remove();
+  const words = text.textContent.trim().split(/\s+/);
+  titleEl.innerHTML = '';
+  if (dot) titleEl.appendChild(dot);
+  titleEl.classList.add('section-title-split');
+  words.forEach(w => {
+    const span = document.createElement('span');
+    span.className = 'section-title-word';
+    span.textContent = w;
+    titleEl.appendChild(document.createTextNode('\u200B'));
+    titleEl.appendChild(span);
+  });
+  const obs2 = new IntersectionObserver(([e]) => {
+    if (e.isIntersecting) { titleEl.classList.add('is-visible'); obs2.disconnect(); }
+  }, { threshold: 0.3 });
+  obs2.observe(titleEl);
+});
+
+(function() {
+  const bar = document.getElementById('genre-bar');
+  if (!bar) return;
+  const pillObs = new IntersectionObserver(([e]) => {
+    if (e.isIntersecting) {
+      bar.classList.add('genre-pills-revealed');
+      bar.querySelectorAll('.genre-pill').forEach((p, i) => {
+        p.style.transitionDelay = (i * 0.04) + 's';
+      });
+      pillObs.disconnect();
+    }
+  }, { threshold: 0.2 });
+  pillObs.observe(bar);
+})();
+
+function animateGrid(gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const cards = grid.querySelectorAll('.card');
+  if (!cards.length) return;
+  const cardObs = new IntersectionObserver((entries) => {
+    entries.forEach((e, idx) => {
+      if (e.isIntersecting) {
+        const i = Array.from(cards).indexOf(e.target);
+        setTimeout(() => e.target.classList.add('card-entered'), i * 48);
+        cardObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
+  cards.forEach(c => cardObs.observe(c));
+}
+
+function animateCWCards() {
+  const grid = document.getElementById('cw-grid');
+  if (!grid) return;
+  const cards = grid.querySelectorAll('.cw-card');
+  cards.forEach((c, i) => {
+    setTimeout(() => {
+      c.style.transitionDelay = (i * 0.07) + 's';
+      c.classList.add('cw-entered');
+    }, 100 + i * 70);
+  });
+}
+
+(function(){
+  const footer = document.querySelector('footer');
+  if (!footer) return;
+  const fObs = new IntersectionObserver(([e]) => {
+    if (e.isIntersecting) { footer.classList.add('footer-visible'); fObs.disconnect(); }
+  }, { threshold: 0.1 });
+  fObs.observe(footer);
+})();
+
+(function(){
+  const track = document.getElementById('ticker-track');
+  if (!track) return;
+  track.style.animation = 'none';
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    track.style.transform = 'translateX(0px)';
+    return;
+  }
+  let offset = 0;
+  const baseSpeed = 46; // px/sec
+  let boost = 0;
+  let lastTime = performance.now();
+
+  lenis.on('scroll', ({ velocity }) => {
+    boost = Math.min(280, Math.max(boost, Math.abs(velocity) * 28));
+  });
+
+  function tick(now){
+    const dt = Math.min(0.05, (now - lastTime) / 1000); // clamp so a tab switch can't cause a huge leap
+    lastTime = now;
+    boost += (0 - boost) * Math.min(1, dt * 2.2); // smoothly decay back to base speed
+    offset += (baseSpeed + boost) * dt;
+    const loopWidth = track.scrollWidth / 3; // content is tripled in buildTicker()
+    if (loopWidth > 0) offset %= loopWidth;
+    track.style.transform = `translateX(${-offset}px)`;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+
+(function() {
+  document.querySelectorAll('.section').forEach((sec, i) => {
+    sec.setAttribute('data-reveal', '');
+    sec.setAttribute('data-reveal-delay', String((i % 3) + 1));
+    revealObs.observe(sec);
+  });
+})();
+
+if (!('ontouchstart' in window)) {
+  document.addEventListener('mousemove', (e) => {
+    const card = e.target.closest('.card-inner');
+    if (!card) { 
+      document.querySelectorAll('.card-inner[style*="rotateX"]').forEach(c => c.style.transform = '');
+      return; 
+    }
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const rx = ((e.clientY - cy) / rect.height) * -8;
+    const ry = ((e.clientX - cx) / rect.width) * 8;
+    card.style.transform = `translateY(-8px) scale(1.02) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    card.style.transition = 'transform 0.1s ease';
+  });
+  document.addEventListener('mouseleave', () => {
+    document.querySelectorAll('.card-inner').forEach(c => {
+      c.style.transform = '';
+      c.style.transition = 'transform 0.45s var(--ease), border-color 0.3s, box-shadow 0.45s';
+    });
+  });
+}
+
+console.log('%cMARSELO ANIME', 'font-size:24px;font-family:Bebas Neue;color:#e63946;letter-spacing:0.06em');
+console.log('%cAnimation engine active 🎌', 'color:#7c5cff;font-size:12px');
+
 </script>
 </body>
 </html>
