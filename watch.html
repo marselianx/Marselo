@@ -55,12 +55,6 @@ header{position:sticky;top:0;z-index:200;height:60px;background:rgba(7,7,13,0.78
 @keyframes spin{to{transform:rotate(360deg)}}
 .loader-label{font-size:12.5px;color:var(--muted);font-weight:500}
 
-.skip-overlay{position:absolute;bottom:18px;right:18px;z-index:20;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.skip-btn{pointer-events:all;background:rgba(7,7,13,0.85);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.15);color:var(--text);padding:9px 20px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;display:none;letter-spacing:0.01em;box-shadow:0 4px 16px rgba(0,0,0,0.5)}
-.skip-btn:hover{background:var(--accent);border-color:var(--accent)}
-.skip-btn.visible{display:block;animation:fadeup 0.3s var(--ease)}
-@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
 .controls{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:14px}
 .ctrl-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;border:none;transition:all 0.22s var(--ease);letter-spacing:0.01em}
@@ -80,6 +74,25 @@ header{position:sticky;top:0;z-index:200;height:60px;background:rgba(7,7,13,0.78
 .srv-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}
 .srv-btn:hover{border-color:var(--border-hover);color:var(--text)}
 .srv-btn.on{background:rgba(124,92,255,.12);border-color:rgba(124,92,255,.4);color:var(--text);box-shadow:0 2px 12px rgba(124,92,255,.15)}
+
+/* --- theater / lights / shortcuts / filter --- */
+.player-wrap{z-index:160}
+body.theater .watch-layout{grid-template-columns:1fr}
+body.theater .sidebar{display:none}
+body.theater .player-wrap{aspect-ratio:21/9}
+@media(max-width:1100px){body.theater .player-wrap{aspect-ratio:16/9}}
+.lights-overlay{position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:150;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
+body.lights-on .lights-overlay{opacity:1}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal-card h3{font-family:'Bebas Neue';font-size:20px;letter-spacing:.03em;margin-bottom:14px}
+.modal-card .row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border)}
+.modal-card .row:last-of-type{border-bottom:none}
+.modal-card kbd{background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:2px 8px;color:var(--text);font-family:monospace;font-size:11.5px}
+.ep-filter{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:9px;font-size:12.5px;margin-bottom:10px;font-family:inherit}
+.ep-filter::placeholder{color:var(--muted)}
+.ep-btn.hidden{display:none}
 
 .anime-info{margin-top:24px;padding-top:24px;border-top:1px solid var(--border)}
 .anime-title{font-family:'Bebas Neue';font-size:38px;line-height:1.05;letter-spacing:0.03em;margin-bottom:10px}
@@ -194,6 +207,18 @@ footer p{font-size:11.5px;color:var(--muted)}
 </div>
 
 <div class="toast-container" id="toasts"></div>
+<div class="lights-overlay" id="lights-overlay"></div>
+<div class="modal-bg" id="shortcuts-modal">
+  <div class="modal-card">
+    <h3>Keyboard Shortcuts</h3>
+    <div class="row"><span>Play / Pause</span><kbd>Space</kbd></div>
+    <div class="row"><span>Seek ±10s</span><kbd>← / →</kbd></div>
+    <div class="row"><span>Next / Prev episode</span><kbd>N / P</kbd></div>
+    <div class="row"><span>Fullscreen</span><kbd>F</kbd></div>
+    <div class="row"><span>Theater mode</span><kbd>T</kbd></div>
+    <button class="btn btn-primary" id="shortcuts-close" style="width:100%;margin-top:16px;justify-content:center">Close</button>
+  </div>
+</div>
 
 <footer>
   <div class="f-logo">MARSELO <em>ANIME</em></div>
@@ -213,7 +238,7 @@ let animeData  = null;
 let allSeasons = [];
 let cfgAutoplay   = true;
 let cfgAutoSkip   = JSON.parse(localStorage.getItem('cfg_autoskip')||'true');
-let skipIntroShown = false;
+let cfgAutoNext   = JSON.parse(localStorage.getItem('cfg_autonext')||'true');
 let skipOutroShown = false;
 let skipTimer      = null;
 
@@ -274,10 +299,6 @@ function buildPage(a){
             <div class="loader-label">Connecting to stream…</div>
           </div>
           <iframe id="player" src="${embedUrl(ANIME_ID,curEp,fmt,server)}" allowfullscreen allow="autoplay;encrypted-media;fullscreen;picture-in-picture"></iframe>
-          <div class="skip-overlay">
-            <button class="skip-btn" id="skip-outro-btn">Skip Outro ⏭</button>
-            <button class="skip-btn" id="skip-intro-btn">Skip Intro ⏭</button>
-          </div>
         </div>
 
         <div class="controls">
@@ -294,6 +315,10 @@ function buildPage(a){
             <button class="btn btn-toggle${cfgAutoSkip?' on':''}" id="ctrl-autoskip">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>Auto Skip ${cfgAutoSkip?'ON':'OFF'}
             </button>
+            <button class="btn btn-toggle${cfgAutoNext?' on':''}" id="ctrl-autonext">Auto Next ${cfgAutoNext?'ON':'OFF'}</button>
+            <button class="btn btn-ghost" id="ctrl-theater">Theater</button>
+            <button class="btn btn-ghost" id="ctrl-lights">Lights Off</button>
+            <button class="btn btn-ghost" id="ctrl-shortcuts">⌘ Shortcuts</button>
           </div>
           <div class="telemetry">
             <div>Status: <span id="meta-status">Buffering</span></div>
@@ -305,6 +330,8 @@ function buildPage(a){
           <button class="srv-btn on" id="srv-1">⚡ Server 1</button>
           <button class="srv-btn" id="srv-2">🌐 Server 2</button>
           <button class="srv-btn" id="srv-3">🔥 Server 3</button>
+          <button class="srv-btn" id="btn-share" style="margin-left:auto">🔗 Share</button>
+          <button class="srv-btn" id="btn-report">🚩 Report</button>
         </div>
 
         <div class="anime-info">
@@ -341,6 +368,7 @@ function buildPage(a){
             <div class="sb-title" style="margin:0">Episodes</div>
             <span class="ep-total">${totalEps} total</span>
           </div>
+          <input class="ep-filter" id="ep-filter" placeholder="Filter episodes…" type="text">
           <div class="ep-grid" id="ep-grid"></div>
         </div>
 
@@ -420,9 +448,8 @@ function buildEpGrid(){
 function goEp(ep){
   markWatched(curEp);
   curEp=ep;
-  skipIntroShown=false;
   skipOutroShown=false;
-  hideSkipBtns();
+  clearTimeout(skipTimer);
   updateEpBtns();
   reloadPlayer();
   document.getElementById('meta-ep').textContent=pad(ep);
@@ -454,15 +481,8 @@ function reloadPlayer(){
   f.src=embedUrl(ANIME_ID,curEp,fmt,server);
   const s=document.getElementById('meta-status');
   if(s){s.textContent='Buffering';s.style.color='var(--muted)'}
-  skipIntroShown=false;
   skipOutroShown=false;
   clearTimeout(skipTimer);
-  hideSkipBtns();
-}
-
-function hideSkipBtns(){
-  document.getElementById('skip-intro-btn')?.classList.remove('visible');
-  document.getElementById('skip-outro-btn')?.classList.remove('visible');
 }
 
 function seekPlayer(absSeconds){
@@ -481,18 +501,6 @@ function seekPlayer(absSeconds){
   }
 }
 
-function showSkip(btnId,seekToSec){
-  const btn=document.getElementById(btnId);
-  if(!btn)return;
-  btn.classList.add('visible');
-  btn.onclick=()=>{
-    clearTimeout(skipTimer);
-    seekPlayer(seekToSec);
-    btn.classList.remove('visible');
-    toast('Skipped');
-  };
-}
-
 function wireControls(){
   document.getElementById('ctrl-play')?.addEventListener('click',()=>cmd('play'));
   document.getElementById('ctrl-prev')?.addEventListener('click',()=>{if(curEp>1)goEp(curEp-1)});
@@ -507,6 +515,24 @@ function wireControls(){
     if(server==='tryembed')reloadPlayer();
   });
 
+  document.getElementById('ctrl-autonext')?.addEventListener('click',function(){
+    cfgAutoNext=!cfgAutoNext;
+    localStorage.setItem('cfg_autonext',JSON.stringify(cfgAutoNext));
+    this.classList.toggle('on',cfgAutoNext);
+    this.textContent=`Auto Next ${cfgAutoNext?'ON':'OFF'}`;
+    toast(`Auto Next ${cfgAutoNext?'enabled':'disabled'}`,'ok');
+  });
+  document.getElementById('ctrl-theater')?.addEventListener('click',toggleTheater);
+  document.getElementById('ctrl-lights')?.addEventListener('click',toggleLights);
+  document.getElementById('ctrl-shortcuts')?.addEventListener('click',openShortcuts);
+  document.getElementById('shortcuts-close')?.addEventListener('click',closeShortcuts);
+  document.getElementById('shortcuts-modal')?.addEventListener('click',e=>{if(e.target.id==='shortcuts-modal')closeShortcuts()});
+  document.getElementById('ep-filter')?.addEventListener('input',e=>filterEpisodes(e.target.value));
+  document.getElementById('btn-share')?.addEventListener('click',()=>{
+    navigator.clipboard?.writeText(location.href).then(()=>toast('Link copied to clipboard','ok')).catch(()=>toast('Could not copy link'));
+  });
+  document.getElementById('btn-report')?.addEventListener('click',()=>toast('Report submitted — thanks!','ok'));
+
   document.getElementById('fmt-sub')?.addEventListener('click',()=>setFmt('sub'));
   document.getElementById('fmt-dub')?.addEventListener('click',()=>setFmt('dub'));
   document.getElementById('srv-1')?.addEventListener('click',()=>setSrv('tryembed'));
@@ -514,6 +540,7 @@ function wireControls(){
   document.getElementById('srv-3')?.addEventListener('click',()=>setSrv('animeplay'));
 
   updateEpBtns();
+  syncAutoSkipAvailability();
 
   document.getElementById('player')?.addEventListener('load',()=>{
     setTimeout(()=>{
@@ -531,10 +558,29 @@ function wireControls(){
     if(e.key==='n'||e.key==='N'){if(curEp<totalEps)goEp(curEp+1)}
     if(e.key==='p'||e.key==='P'){if(curEp>1)goEp(curEp-1)}
     if(e.key==='f'||e.key==='F')document.getElementById('player')?.requestFullscreen?.();
-    if(e.key==='s'||e.key==='S'){
-      const ib=document.getElementById('skip-intro-btn');
-      if(ib?.classList.contains('visible'))ib.click();
-    }
+    if(e.key==='t'||e.key==='T')toggleTheater();
+    if(e.key==='Escape')closeShortcuts();
+  });
+}
+
+function toggleTheater(){
+  document.body.classList.toggle('theater');
+  toast(document.body.classList.contains('theater')?'Theater mode on':'Theater mode off');
+}
+function toggleLights(){
+  document.body.classList.toggle('lights-on');
+  const on=document.body.classList.contains('lights-on');
+  document.getElementById('ctrl-lights')?.classList.toggle('on',on);
+}
+function openShortcuts(){document.getElementById('shortcuts-modal')?.classList.add('open')}
+function closeShortcuts(){document.getElementById('shortcuts-modal')?.classList.remove('open')}
+
+function filterEpisodes(q){
+  q=q.trim();
+  document.querySelectorAll('.ep-btn').forEach((b,i)=>{
+    const ep=i+1;
+    const match=!q||String(ep).includes(q)||b.title.toLowerCase().includes(q.toLowerCase());
+    b.classList.toggle('hidden',!match);
   });
 }
 
@@ -551,9 +597,18 @@ function setSrv(s){
   document.getElementById('srv-1')?.classList.toggle('on',s==='tryembed');
   document.getElementById('srv-2')?.classList.toggle('on',s==='megaplay');
   document.getElementById('srv-3')?.classList.toggle('on',s==='animeplay');
+  syncAutoSkipAvailability();
   reloadPlayer();
   const names={tryembed:'Server 1',megaplay:'Server 2',animeplay:'Server 3'};
   toast(`${names[s]||'Server'} active`);
+}
+
+function syncAutoSkipAvailability(){
+  const btn=document.getElementById('ctrl-autoskip');
+  if(!btn)return;
+  const supported=server==='tryembed';
+  btn.disabled=!supported;
+  btn.title=supported?'':'Auto Skip is only supported on Server 1';
 }
 
 function cmd(c,v){
@@ -603,50 +658,24 @@ function listenPlayer(){
     }else if(ev==='ended'||ev==='complete'){
       s.textContent='Ended';s.style.color='var(--muted)';w?.classList.remove('playing');
       markWatched(curEp);updateEpBtns();
-      if(curEp<totalEps){toast('Loading next episode…');setTimeout(()=>goEp(curEp+1),1600)}
+      if(cfgAutoNext&&curEp<totalEps){toast('Loading next episode…');setTimeout(()=>goEp(curEp+1),1600)}
     }else if(ev==='timeupdate'||ev==='seeked'){
       s.textContent=paused?'Paused':'Playing';
       s.style.color=paused?'var(--muted)':'var(--accent)';
 
-      if(dur>60){
-        const introStart=30;
-        const introEnd=Math.min(dur*0.18,120);
+      // Auto Skip is only reliable on Server 1 (tryembed): intro skip is handled
+      // natively via ?autoSkip=true, so we only need to handle the outro here.
+      if(server==='tryembed'&&cfgAutoSkip&&dur>60){
         const outroStart=dur*0.82;
         const outroEnd=dur-8;
-
-        if(ct>=introStart&&ct<=introEnd&&!skipIntroShown){
-          skipIntroShown=true;
-          const seekTo=Math.ceil(introEnd);
-          if(server==='tryembed'&&cfgAutoSkip){
-            // tryembed: ?autoSkip=true already handles intro natively.
-            // We only fire postMessage seek as backup for outro or if user toggled off native skip.
-          } else if(cfgAutoSkip){
-            clearTimeout(skipTimer);
-            skipTimer=setTimeout(()=>{
-              seekPlayer(seekTo);
-              document.getElementById('skip-intro-btn')?.classList.remove('visible');
-              toast('Intro skipped');
-            },1400);
-            showSkip('skip-intro-btn',seekTo);
-          } else {
-            showSkip('skip-intro-btn',seekTo);
-          }
-        }
-
         if(ct>=outroStart&&ct<=outroEnd&&!skipOutroShown){
           skipOutroShown=true;
           const seekTo=Math.ceil(outroEnd);
-          if(cfgAutoSkip){
-            clearTimeout(skipTimer);
-            skipTimer=setTimeout(()=>{
-              seekPlayer(seekTo);
-              document.getElementById('skip-outro-btn')?.classList.remove('visible');
-              toast('Outro skipped');
-            },1400);
-            showSkip('skip-outro-btn',seekTo);
-          } else {
-            showSkip('skip-outro-btn',seekTo);
-          }
+          clearTimeout(skipTimer);
+          skipTimer=setTimeout(()=>{
+            seekPlayer(seekTo);
+            toast('Outro skipped');
+          },1400);
         }
       }
     }
