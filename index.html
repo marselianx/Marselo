@@ -4,6 +4,9 @@
 <link rel="icon" type="image/x-icon" href="https://i.ibb.co/mQYwYDN/marseloanime.png">
 <meta name="description" content="Watch anime online free on Marselo. Stream English subbed and dubbed anime. Best alternative to HiAnime, AniWave, 9Anime, GogoAnime.">
 <script src="https://quge5.com/88/tag.min.js" data-zone="255305" async data-cfasync="false"></script>
+<link rel="icon" type="image/x-icon" href="https://i.ibb.co/mQYwYDN/marseloanime.png">
+<meta name="description" content="Watch anime online free on Marselo. Stream English subbed and dubbed anime. Best alternative to HiAnime, AniWave, 9Anime, GogoAnime.">
+<script src="https://quge5.com/88/tag.min.js" data-zone="255305" async data-cfasync="false"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MARSELO ANIME</title>
@@ -28,7 +31,10 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse 80% 50% at 110% -10%,rgba(124,92,255,0.07) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at -10% 100%,rgba(230,57,70,0.06) 0%,transparent 60%);pointer-events:none}
+body::before{content:'';position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse 80% 55% at 110% -10%,rgba(124,92,255,0.11) 0%,transparent 62%),radial-gradient(ellipse 65% 45% at -10% 100%,rgba(230,57,70,0.09) 0%,transparent 62%),radial-gradient(ellipse 50% 35% at 50% 0%,rgba(244,196,48,0.035) 0%,transparent 65%);pointer-events:none}
+#cursor-glow{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity 0.6s var(--ease);background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(230,57,70,0.06),rgba(124,92,255,0.04) 40%,transparent 70%);mix-blend-mode:screen}
+#cursor-glow.active{opacity:1}
+@media(prefers-reduced-motion:reduce){#cursor-glow{display:none}}
 ::selection{background:var(--accent);color:#fff}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -130,10 +136,19 @@ nav{display:flex;gap:4px;align-items:center}
 .card-inner{
   width:100%;height:100%;border-radius:14px;overflow:hidden;
   background:var(--surface-2);border:1px solid var(--border);
-  cursor:pointer;position:relative;
-  transition:transform 0.45s var(--ease),border-color 0.3s,box-shadow 0.45s
+  cursor:pointer;position:relative;perspective:1000px;
+  transition:transform 0.45s var(--ease),border-color 0.35s,box-shadow 0.45s var(--ease)
 }
-.card:hover .card-inner{transform:translateY(-8px) scale(1.02);border-color:rgba(230,57,70,0.3);box-shadow:0 24px 48px -8px rgba(0,0,0,0.6),0 0 30px -5px rgba(230,57,70,0.15)}
+.card:hover .card-inner{transform:translateY(-9px) scale(1.025);border-color:rgba(230,57,70,0.35);box-shadow:0 28px 56px -10px rgba(0,0,0,0.65),0 0 42px -6px rgba(230,57,70,0.22),inset 0 0 0 1px rgba(255,255,255,0.05)}
+.card-inner::after{content:'';position:absolute;inset:0;z-index:6;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,0.14) 48%,transparent 62%);transform:translateX(-120%);transition:transform 0.65s var(--ease)}
+.card:hover .card-inner::after{transform:translateX(120%)}
+@keyframes cardFlip{
+  0%{transform:translateY(-9px) scale(1.025) rotateY(0deg)}
+  45%{transform:translateY(-9px) scale(1.04) rotateY(92deg)}
+  55%{transform:translateY(-9px) scale(1.04) rotateY(92deg)}
+  100%{transform:translateY(-9px) scale(1.025) rotateY(0deg)}
+}
+.card-inner.flipping{animation:cardFlip 0.6s var(--ease) forwards;box-shadow:0 28px 60px -8px rgba(0,0,0,0.7),0 0 55px -4px rgba(230,57,70,0.35)}
 .card-poster{width:100%;height:100%;position:relative;overflow:hidden}
 .card-poster img{width:100%;height:100%;object-fit:cover;transition:transform 0.6s var(--ease),filter 0.4s}
 .card:hover .card-poster img{transform:scale(1.08);filter:brightness(0.85)}
@@ -525,6 +540,23 @@ footer.footer-visible{opacity:1;transform:translateY(0)}
 }
 @keyframes loader-fill{from{width:0}to{width:100%}}
 
+/* ── OUTGOING PAGE TRANSITION (navigating to watch.html) ──── */
+#page-transition{
+  position:fixed;inset:0;z-index:11000;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);
+  clip-path:circle(0% at var(--ox,50%) var(--oy,50%));
+  transition:clip-path 0.6s var(--ease);
+  pointer-events:none
+}
+#page-transition.active{clip-path:circle(150% at var(--ox,50%) var(--oy,50%));pointer-events:all}
+.pt-inner{display:flex;flex-direction:column;align-items:center;gap:16px;opacity:0;transform:scale(0.85);transition:opacity 0.35s var(--ease) 0.2s,transform 0.35s var(--ease) 0.2s}
+#page-transition.active .pt-inner{opacity:1;transform:scale(1)}
+.pt-ring{width:46px;height:46px;border-radius:50%;border:3px solid var(--muted-2);border-top-color:var(--accent);animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pt-text{font-family:'Bebas Neue';font-size:18px;letter-spacing:0.05em;color:var(--muted)}
+.pt-text em{color:var(--accent);font-style:normal}
+
 /* ── REDUCED MOTION OVERRIDE ──────────────────────────────── */
 @media(prefers-reduced-motion:reduce){
   [data-reveal],[data-reveal="fade-left"],[data-reveal="scale"],[data-reveal="clip"]{opacity:1!important;transform:none!important;clip-path:none!important;transition:none!important}
@@ -534,6 +566,8 @@ footer.footer-visible{opacity:1;transform:translateY(0)}
   .hero-title-line span,.hero-eyebrow,.hero-sub,.hero-actions,.hero-badge-row,.hero-scroll-hint{opacity:1!important;transform:none!important;animation:none!important}
   footer{opacity:1!important;transform:none!important}
   .section-title-split .section-title-word{opacity:1!important;transform:none!important}
+  .card-inner.flipping{animation:none!important}
+  #page-transition{transition:none!important}
 }
 
 </style>
@@ -550,6 +584,13 @@ footer.footer-visible{opacity:1;transform:translateY(0)}
     <div class="loader-bar"></div>
   </div>
 </div>
+<div id="page-transition">
+  <div class="pt-inner">
+    <div class="pt-ring"></div>
+    <div class="pt-text">Loading <em>Episode</em></div>
+  </div>
+</div>
+<div id="cursor-glow"></div>
 <div id="scroll-progress"></div>
 
 
@@ -850,7 +891,11 @@ function makeCard(anime, i=0, small=false){
     localStorage.setItem('maf',JSON.stringify(favorites));
   });
   card.querySelector('.card-inner').addEventListener('click',e=>{
-    if(!e.target.closest('.card-fav'))openDetailModal(anime.id);
+    if(e.target.closest('.card-fav'))return;
+    const inner=e.currentTarget;
+    inner.classList.add('flipping');
+    setTimeout(()=>inner.classList.remove('flipping'),600);
+    openDetailModal(anime.id);
   });
   return card;
 }
@@ -890,14 +935,27 @@ function buildContinueWatching(){
         <div class="cw-sub">${w.studio||'Unknown'}</div>
         <div class="cw-bar"><div class="cw-bar-fill" style="width:${w.progress||0}%"></div></div>
       </div>`;
-    card.addEventListener('click',()=>go(w.animeId,w.episode));
+    card.addEventListener('click',()=>go(w.animeId,w.episode,card));
     grid.appendChild(card);
   });
   animateCWCards();
 }
 
-function go(id, ep=1){
-  window.location.href=`watch.html?id=${id}&ep=${ep}`;
+function go(id, ep=1, originEl=null){
+  const url=`watch.html?id=${id}&ep=${ep}`;
+  const pt=document.getElementById('page-transition');
+  if(!pt||(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    window.location.href=url;return;
+  }
+  const rect=originEl?.getBoundingClientRect?.();
+  const ox=rect?((rect.left+rect.width/2)/window.innerWidth*100)+'%':'50%';
+  const oy=rect?((rect.top+rect.height/2)/window.innerHeight*100)+'%':'50%';
+  document.body.style.setProperty('--ox',ox);
+  document.body.style.setProperty('--oy',oy);
+  pt.style.setProperty('--ox',ox);
+  pt.style.setProperty('--oy',oy);
+  pt.classList.add('active');
+  setTimeout(()=>{window.location.href=url},650);
 }
 
 async function loadHomepage(){
@@ -956,7 +1014,7 @@ async function openDetailModal(id){
         </div>
       </div>
     </div>`;
-  document.getElementById('d-play').onclick=()=>{closeModal('detail-modal');go(a.id)};
+  document.getElementById('d-play').onclick=(e)=>{closeModal('detail-modal');go(a.id,1,e.currentTarget)};
   document.getElementById('d-share').onclick=()=>{
     const url=`https://marselo.dpdns.org/watch.html?id=${a.id}&ep=1`;
     navigator.clipboard?.writeText(url);
@@ -986,7 +1044,7 @@ function loadHistory(){
       </div>
       <div class="history-badge">EP ${String(item.episode).padStart(2,'0')}</div>
       <div class="history-time">${item.ts?timeAgo(item.ts):item.watchedAt||''}</div>`;
-    el.addEventListener('click',()=>{go(item.animeId,item.episode);closeModal('history-modal')});
+    el.addEventListener('click',()=>{go(item.animeId,item.episode,el);closeModal('history-modal')});
     list.appendChild(el);
   });
 }
@@ -1324,7 +1382,13 @@ function animateCWCards() {
 })();
 
 if (!('ontouchstart' in window)) {
+  const glow = document.getElementById('cursor-glow');
   document.addEventListener('mousemove', (e) => {
+    if (glow) {
+      glow.style.setProperty('--mx', e.clientX + 'px');
+      glow.style.setProperty('--my', e.clientY + 'px');
+      glow.classList.add('active');
+    }
     const card = e.target.closest('.card-inner');
     if (!card) { 
       document.querySelectorAll('.card-inner[style*="rotateX"]').forEach(c => c.style.transform = '');
@@ -1335,10 +1399,11 @@ if (!('ontouchstart' in window)) {
     const cy = rect.top + rect.height / 2;
     const rx = ((e.clientY - cy) / rect.height) * -8;
     const ry = ((e.clientX - cx) / rect.width) * 8;
-    card.style.transform = `translateY(-8px) scale(1.02) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    card.style.transform = `translateY(-9px) scale(1.025) rotateX(${rx}deg) rotateY(${ry}deg)`;
     card.style.transition = 'transform 0.1s ease';
   });
   document.addEventListener('mouseleave', () => {
+    document.getElementById('cursor-glow')?.classList.remove('active');
     document.querySelectorAll('.card-inner').forEach(c => {
       c.style.transform = '';
       c.style.transition = 'transform 0.45s var(--ease), border-color 0.3s, box-shadow 0.45s';
