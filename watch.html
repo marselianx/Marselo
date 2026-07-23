@@ -73,6 +73,8 @@ header{position:sticky;top:0;z-index:200;height:60px;background:rgba(7,7,13,0.78
 @keyframes fadeInOut{0%,100%{opacity:0.7}50%{opacity:1}}
 .telemetry{font-family:monospace;font-size:11.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);padding:8px 14px;border-radius:9px;display:flex;gap:16px;align-items:center}
 .telemetry span{color:var(--text);font-weight:700}
+.party-code{background:var(--surface-2);border:1px solid var(--border);padding:8px 14px;border-radius:9px;display:flex;gap:12px;align-items:center;font-family:monospace;font-size:12px;color:var(--text);cursor:pointer;transition:all 0.2s}
+.party-code:hover{border-color:var(--border-hover);background:rgba(255,255,255,0.02)}
 
 .server-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .srv-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.25s var(--ease-smooth);will-change:transform,background,border-color;active:scale:0.95}
@@ -396,9 +398,12 @@ function buildPage(a){
             <button class="btn btn-ghost" id="ctrl-lights">Lights Off</button>
             <button class="btn btn-ghost" id="ctrl-shortcuts">⌘ Shortcuts</button>
           </div>
-          <div class="telemetry">
-            <div>Status: <span id="meta-status">Buffering</span></div>
-            <div>EP <span id="meta-ep">${pad(curEp)}</span> / ${totalEps}</div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <div class="telemetry">
+              <div>Status: <span id="meta-status">Buffering</span></div>
+              <div>EP <span id="meta-ep">${pad(curEp)}</span> / ${totalEps}</div>
+            </div>
+            <div class="party-code" id="party-code-display" title="Click to copy">📍 INVITE CODE <span id="party-code-text">Create</span></div>
           </div>
         </div>
 
@@ -838,6 +843,24 @@ function saveHistory(a){
   localStorage.setItem('mwh',JSON.stringify(wh));
 }
 
+function initPartyCode(){
+  const btn=document.getElementById('party-code-display');
+  if(!btn)return;
+  const genCode=()=>Math.random().toString(36).substr(2,9).toUpperCase();
+  const party=JSON.parse(localStorage.getItem('pw')||'{}');
+  if(party.id===ANIME_ID&&party.code){
+    document.getElementById('party-code-text').textContent=party.code;
+  }else{
+    party.id=ANIME_ID;party.code=genCode();party.ep=curEp;party.srv=server;
+    localStorage.setItem('pw',JSON.stringify(party));
+    document.getElementById('party-code-text').textContent=party.code;
+  }
+  btn.addEventListener('click',()=>{
+    const code=document.getElementById('party-code-text').textContent;
+    navigator.clipboard.writeText(code).then(()=>toast('Code copied!','ok'));
+  });
+}
+
 if(!ANIME_ID){
   document.getElementById('root').innerHTML=`<div class="error-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><h2>Nothing to Play</h2><p>Go back and choose something to watch.</p><a href="index.html" class="back-btn" style="margin-top:12px">← Back to Home</a></div>`;
 }else{
@@ -847,6 +870,7 @@ if(!ANIME_ID){
       return;
     }
     buildPage(data[0]);
+    initPartyCode();
     toast(`Now playing: ${data[0].title.english||data[0].title.romaji}`,'ok');
     setTimeout(()=>{markWatched(curEp);updateEpBtns()},15000);
   });
