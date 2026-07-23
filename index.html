@@ -8,7 +8,7 @@
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "Marselo Anime",
-  "url": "https://marselo.dpdns.org/"
+  "url": "https://marselo.dpdns.org/" 
 }
 </script>
   <link rel="icon" type="image/x-icon" href="https://i.ibb.co/mQYwYDN/marseloanime.png">
@@ -266,6 +266,24 @@
 
     .search-wrap input::placeholder {
       color: var(--muted)
+    }
+
+    .party-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .party-btn:hover {
+      color: var(--text);
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.02);
     }
 
     .search-icon {
@@ -2555,6 +2573,7 @@
           <path d="m21 21-4.3-4.3" />
         </svg>
       </div>
+      <button class="party-btn" id="join-party-btn" title="Join Watch Party">[NEW] 📍 JOIN</button>
       <button class="icon-btn spin" id="settings-btn" title="Settings">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />
@@ -2743,7 +2762,16 @@
     </div>
   </div>
 
-
+  <div class="modal-overlay" id="party-modal">
+    <div class="modal-win" style="max-width:360px;text-align:center">
+      <button class="modal-x" id="party-close">✕</button>
+      <div class="modal-body" style="padding:36px 28px">
+        <h2 class="display" style="font-size:24px;margin-bottom:18px">Join Watch Party</h2>
+        <input type="text" id="party-code-input" placeholder="Paste party code…" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:16px;font-family:monospace;text-transform:uppercase">
+        <button id="party-join-btn" style="width:100%;background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s">Join Party</button>
+      </div>
+    </div>
+  </div>
 
   <div class="toast-container" id="toasts"></div>
 
@@ -3180,6 +3208,22 @@
     document.getElementById('shortcuts-open').addEventListener('click', () => openModal('shortcuts-modal'));
     document.getElementById('shortcuts-close').addEventListener('click', () => closeModal('shortcuts-modal'));
     document.getElementById('shortcuts-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('shortcuts-modal') });
+
+    document.getElementById('join-party-btn').addEventListener('click', () => openModal('party-modal'));
+    document.getElementById('party-close').addEventListener('click', () => closeModal('party-modal'));
+    document.getElementById('party-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('party-modal') });
+    document.getElementById('party-join-btn').addEventListener('click', () => {
+      const code = document.getElementById('party-code-input').value.trim().toUpperCase();
+      if(!code) { toast('Enter a code'); return; }
+      const party = JSON.parse(localStorage.getItem('pw') || '{}');
+      if(party.code === code && party.id) {
+        closeModal('party-modal');
+        toast('Joining party...');
+        setTimeout(() => window.location.href = `watch.html?id=${party.id}&ep=${party.ep||1}`, 600);
+      } else {
+        toast('Invalid code');
+      }
+    });
 
     document.getElementById('t-light').addEventListener('click', function () {
       this.classList.toggle('on');
