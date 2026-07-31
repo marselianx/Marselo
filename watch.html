@@ -259,8 +259,8 @@ const START_EP  = parseInt(params.get('ep'))||1;
 
 let curEp      = START_EP;
 let totalEps   = 12;
-let fmt        = 'sub';
-let server     = 'tryembed';
+let fmt        = localStorage.getItem('player_fmt') || 'sub';
+let server     = localStorage.getItem('player_server') || 'tryembed';
 let animeData  = null;
 let allSeasons = [];
 let cfgAutoplay   = true;
@@ -403,7 +403,7 @@ function buildPage(a){
               <div>Status: <span id="meta-status">Buffering</span></div>
               <div>EP <span id="meta-ep">${pad(curEp)}</span> / ${totalEps}</div>
             </div>
-            <div class="party-code" id="party-code-display" title="Click to copy">📍 INVITE CODE <span id="party-code-text">Create</span></div>
+            <div class="party-code" id="party-code-display" title="Click to copy">📍 <span id="party-code-text">Create</span></div>
           </div>
         </div>
 
@@ -655,6 +655,15 @@ function wireControls(){
   document.getElementById('srv-4')?.addEventListener('click',()=>setSrv('4animo'));
   document.getElementById('srv-5')?.addEventListener('click',()=>setSrv('vidnest'));
 
+  // Initialize button states based on saved preferences
+  document.getElementById('fmt-sub')?.classList.toggle('on', fmt === 'sub');
+  document.getElementById('fmt-dub')?.classList.toggle('on', fmt === 'dub');
+  document.getElementById('srv-1')?.classList.toggle('on', server === 'tryembed');
+  document.getElementById('srv-2')?.classList.toggle('on', server === 'megaplay');
+  document.getElementById('srv-3')?.classList.toggle('on', server === 'animeplay');
+  document.getElementById('srv-4')?.classList.toggle('on', server === '4animo');
+  document.getElementById('srv-5')?.classList.toggle('on', server === 'vidnest');
+
   updateEpBtns();
   syncAutoSkipAvailability();
 
@@ -702,6 +711,7 @@ function filterEpisodes(q){
 
 function setFmt(f){
   fmt=f;
+  localStorage.setItem('player_fmt', f);
   document.getElementById('fmt-sub')?.classList.toggle('on',f==='sub');
   document.getElementById('fmt-dub')?.classList.toggle('on',f==='dub');
   reloadPlayer();
@@ -710,6 +720,7 @@ function setFmt(f){
 
 function setSrv(s){
   server=s;
+  localStorage.setItem('player_server', s);
   document.getElementById('srv-1')?.classList.toggle('on',s==='tryembed');
   document.getElementById('srv-2')?.classList.toggle('on',s==='megaplay');
   document.getElementById('srv-3')?.classList.toggle('on',s==='animeplay');
@@ -843,23 +854,43 @@ function saveHistory(a){
   localStorage.setItem('mwh',JSON.stringify(wh));
 }
 
+let partyChannel=null;
+let partyCode=null;
 function initPartyCode(){
   const btn=document.getElementById('party-code-display');
   if(!btn)return;
-  const genCode=()=>Math.random().toString(36).substr(2,9).toUpperCase();
-  const party=JSON.parse(localStorage.getItem('pw')||'{}');
-  if(party.id===ANIME_ID&&party.code){
-    document.getElementById('party-code-text').textContent=party.code;
+  
+  const urlParams=new URLSearchParams(location.search);
+  const guestCode=urlParams.get('code');
+  
+  if(guestCode){
+    partyCode=guestCode;
   }else{
-    party.id=ANIME_ID;party.code=genCode();party.ep=curEp;party.srv=server;
-    localStorage.setItem('pw',JSON.stringify(party));
-    document.getElementById('party-code-text').textContent=party.code;
+    const genCode=()=>{
+      const rand=Math.random().toString(36).substr(2,6);
+      const ts=Date.now().toString(36).slice(-3);
+      return (rand+ts).toUpperCase();
+    };
+    partyCode=genCode();
+    const sessionData={code:partyCode,id:ANIME_ID,ep:curEp,srv:server,time:Date.now()};
+    localStorage.setItem('pw_'+partyCode,JSON.stringify(sessionData));
   }
+  
+  document.getElementById('party-code-text').textContent=partyCode;
   btn.addEventListener('click',()=>{
-    const code=document.getElementById('party-code-text').textContent;
-    navigator.clipboard.writeText(code).then(()=>toast('Code copied!','ok'));
+    navigator.clipboard.writeText(partyCode).then(()=>toast('Code copied!','ok'));
   });
+  try{partyChannel=new BroadcastChannel('party_'+partyCode)}catch(e){}
 }
+
+const observer=new MutationObserver(()=>{
+  const iframe=document.querySelector('.player-wrap iframe');
+  if(iframe&&partyChannel&&partyCode){
+    const msg={host:true,time:Math.random(),server,ep:curEp,anime:ANIME_ID,code:partyCode};
+    partyChannel.postMessage(msg);
+  }
+});
+observer.observe(document.body,{subtree:true,childList:true});
 
 if(!ANIME_ID){
   document.getElementById('root').innerHTML=`<div class="error-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><h2>Nothing to Play</h2><p>Go back and choose something to watch.</p><a href="index.html" class="back-btn" style="margin-top:12px">← Back to Home</a></div>`;
@@ -871,10 +902,85 @@ if(!ANIME_ID){
     }
     buildPage(data[0]);
     initPartyCode();
+    
+    if(partyChannel){
+      partyChannel.onmessage=(e)=>{
+        if(e.data.host&&e.data.anime===ANIME_ID&&e.data.ep===curEp){
+          document.getElementById('meta-status').textContent='Synced';
+        }
+      };
+    }
+    
     toast(`Now playing: ${data[0].title.english||data[0].title.romaji}`,'ok');
     setTimeout(()=>{markWatched(curEp);updateEpBtns()},15000);
   });
 }
+
+// ========== PROTECTION CODE ==========
+// Disable right-click
+document.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  return false;
+});
+
+// Block all DevTools keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  // F12
+  if (e.keyCode === 123 || e.key === 'F12') {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+  // Mac: Cmd+Option+I
+  if ((e.metaKey || e.ctrlKey) && e.altKey && (e.keyCode === 73 || e.key === 'i' || e.key === 'I')) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+  // Mac: Cmd+Option+U
+  if ((e.metaKey || e.ctrlKey) && e.altKey && (e.keyCode === 85 || e.key === 'u' || e.key === 'U')) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+  // Ctrl+Shift+I
+  if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.key === 'i' || e.key === 'I')) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+  // Ctrl+Shift+C
+  if (e.ctrlKey && e.shiftKey && (e.keyCode === 67 || e.key === 'c' || e.key === 'C')) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+  // Ctrl+Shift+J
+  if (e.ctrlKey && e.shiftKey && (e.keyCode === 74 || e.key === 'j' || e.key === 'J')) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+  // Ctrl+Shift+K
+  if (e.ctrlKey && e.shiftKey && (e.keyCode === 75 || e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+}, true);
+
+// Clear console every second
+setInterval(() => {
+  console.clear();
+}, 1000);
+
+// Override console methods
+const noop = () => {};
+console.log = noop;
+console.warn = noop;
+console.error = noop;
+console.debug = noop;
+console.info = noop;
 </script>
 </body>
 </html>
