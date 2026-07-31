@@ -8,7 +8,7 @@
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "Marselo Anime",
-  "url": "https://marselo.dpdns.org/" 
+  "url": "https://marselo.dpdns.org/"
 }
 </script>
   <link rel="icon" type="image/x-icon" href="https://i.ibb.co/mQYwYDN/marseloanime.png">
@@ -46,7 +46,8 @@
     * {
       box-sizing: border-box;
       margin: 0;
-      padding: 0
+      padding: 0;
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     }
 
     html {
@@ -68,7 +69,18 @@
       inset: 0;
       z-index: -1;
       background: radial-gradient(ellipse 80% 55% at 110% -10%, rgba(124, 92, 255, 0.11) 0%, transparent 62%), radial-gradient(ellipse 65% 45% at -10% 100%, rgba(230, 57, 70, 0.09) 0%, transparent 62%), radial-gradient(ellipse 50% 35% at 50% 0%, rgba(244, 196, 48, 0.035) 0%, transparent 65%);
-      pointer-events: none
+      pointer-events: none;
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease-in-out infinite;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% {
+        background-position: 0% 0%;
+      }
+      50% {
+        background-position: 100% 100%;
+      }
     }
 
     #cursor-glow {
@@ -458,7 +470,40 @@
     }
 
     .section {
-      padding: 48px 5vw 0
+      padding: 48px 5vw 0;
+      animation: viewEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+
+    main.exiting {
+      animation: viewExit 0.35s cubic-bezier(0.7, 0, 0.84, 0) forwards !important;
+    }
+
+    @keyframes viewEnter {
+      from {
+        opacity: 0;
+        transform: translateY(35px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes viewExit {
+      from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-25px) scale(0.97);
+      }
+    }
+
+    main[style*="display: none"] {
+      animation: none !important;
+      opacity: 0 !important;
     }
 
     .section-hd {
@@ -467,7 +512,9 @@
       justify-content: space-between;
       margin-bottom: 24px;
       gap: 12px;
-      flex-wrap: wrap
+      flex-wrap: wrap;
+      animation: slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+      opacity: 0;
     }
 
     .section-title {
@@ -477,7 +524,31 @@
       color: var(--text);
       display: flex;
       align-items: center;
-      gap: 10px
+      gap: 10px;
+      animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+      opacity: 0;
+    }
+
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     .section-title-dot {
@@ -518,7 +589,35 @@
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
-      gap: 20px
+      gap: 20px;
+      animation: gridFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+      opacity: 0;
+    }
+
+    @keyframes gridFadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* View transition overlay */
+    #view-transition-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(230, 57, 70, 0.15) 0%, rgba(124, 92, 255, 0.15) 50%, rgba(244, 196, 48, 0.05) 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 150;
+      backdrop-filter: blur(0px);
+    }
+
+    #view-transition-overlay.active {
+      opacity: 1;
+      backdrop-filter: blur(3px);
     }
 
     @media(max-width:680px) {
@@ -2554,6 +2653,8 @@
     </div>
   </section>
 
+  <div id="view-transition-overlay"></div>
+
   <header>
     <div class="logo" id="nav-logo">
       <img src="https://i.ibb.co/mQYwYDN/marseloanime.png" class="logo-mark" alt="Logo">
@@ -2561,6 +2662,10 @@
     </div>
     <nav>
       <button class="nav-link active" id="nav-home">Home</button>
+      <button class="nav-link" id="nav-popular">Popular</button>
+      <button class="nav-link" id="nav-tv">TV</button>
+      <button class="nav-link" id="nav-movie">Movies</button>
+      <button class="nav-link" id="nav-schedule">Schedule</button>
       <button class="nav-link" id="nav-history">History</button>
       <button class="nav-link" id="nav-favorites">Favorites</button>
     </nav>
@@ -2573,7 +2678,7 @@
           <path d="m21 21-4.3-4.3" />
         </svg>
       </div>
-      <button class="party-btn" id="join-party-btn" title="Join Watch Party">[NEW] 📍 JOIN</button>
+      <button class="party-btn" id="join-party-btn" title="Join Watch Party">📍 Party</button>
       <button class="icon-btn spin" id="settings-btn" title="Settings">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />
@@ -2656,6 +2761,37 @@
     <div class="grid" id="favorites-view-grid"></div>
   </main>
 
+  <main id="popular-view" style="display:none" class="section">
+    <div class="section-hd">
+      <div class="section-title"><span class="section-title-dot"></span>Popular Right Now</div>
+    </div>
+    <p style="color:var(--muted);font-size:12.5px;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:24px">Trending across the community</p>
+    <div class="grid" id="popular-grid"></div>
+  </main>
+
+  <main id="tv-view" style="display:none" class="section">
+    <div class="section-hd">
+      <div class="section-title"><span class="section-title-dot"></span>TV Series</div>
+    </div>
+    <p style="color:var(--muted);font-size:12.5px;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:24px">Ongoing and upcoming series</p>
+    <div class="grid" id="tv-grid"></div>
+  </main>
+
+  <main id="movie-view" style="display:none" class="section">
+    <div class="section-hd">
+      <div class="section-title"><span class="section-title-dot"></span>Anime Movies</div>
+    </div>
+    <p style="color:var(--muted);font-size:12.5px;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:24px">Films and movie specials</p>
+    <div class="grid" id="movie-grid"></div>
+  </main>
+
+  <main id="schedule-view" style="display:none" class="section">
+    <div class="section-hd">
+      <div class="section-title"><span class="section-title-dot"></span>Weekly Schedule</div>
+    </div>
+    <p style="color:var(--muted);font-size:12.5px;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:24px">Upcoming episode air times</p>
+    <div id="schedule-container" style="display: grid; gap: 20px;"></div>
+  </main>
 
   <div class="modal-overlay" id="detail-modal">
     <div class="modal-win" style="max-width:780px">
@@ -2791,12 +2927,13 @@
     let cfgAutoplay = true;
     let cfgAutonext = true;
 
-    const GQL = `query($id:Int,$id_in:[Int],$search:String,$sort:[MediaSort],$genre:String){Page(page:1,perPage:24){media(id:$id,id_in:$id_in,search:$search,type:ANIME,sort:$sort,genre:$genre){id title{english romaji}description coverImage{large}averageScore episodes genres relations{nodes{id type season seasonYear title{english romaji}}}studios(isMain:true){nodes{name}}}}}`;
+    const GQL = `query($id:Int,$id_in:[Int],$search:String,$sort:[MediaSort],$genre:String,$page:Int,$perPage:Int){Page(page:$page,perPage:$perPage){media(id:$id,id_in:$id_in,search:$search,type:ANIME,sort:$sort,genre:$genre){id title{english romaji}description coverImage{large}averageScore episodes genres relations{nodes{id type season seasonYear title{english romaji}}}studios(isMain:true){nodes{name}}}}}`;
     const GENRES = ['Action', 'Fantasy', 'Sci-Fi', 'Romance', 'Comedy', 'Drama', 'Horror', 'Mystery', 'Thriller', 'Sports'];
 
     async function gql(vars) {
       try {
-        const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: GQL, variables: vars }) });
+        const variables = { page: 1, perPage: 24, ...vars };
+        const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: GQL, variables }) });
         return (await r.json())?.data?.Page?.media || [];
       } catch { return [] }
     }
@@ -2847,6 +2984,8 @@
       const title = anime.title.english || anime.title.romaji;
       const ep = (anime.episodes && anime.episodes > 0) ? `${anime.episodes} eps` : 'Ongoing';
       const fav = favorites.includes(anime.id);
+      let watchLater = JSON.parse(localStorage.getItem('mwl') || '[]');
+      const isWatchLater = watchLater.includes(anime.id);
       const card = document.createElement('div');
       card.className = 'card';
       if (small) card.style.cssText = 'width:160px;height:240px;flex-shrink:0';
@@ -2857,7 +2996,8 @@
         <img src="${anime.coverImage.large}" loading="lazy" alt="${title}">
         <div class="card-gradient"></div>
         <div class="card-score"><svg viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.771l-7.416 3.642 1.48-8.279L0 9.306l8.332-1.151z"/></svg>${anime.averageScore || '—'}</div>
-        <button class="card-fav${fav ? ' on' : ''}" data-id="${anime.id}"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+        <button class="card-fav${fav ? ' on' : ''}" data-id="${anime.id}" title="Add to Favorites"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+        <button class="card-watchlater${isWatchLater ? ' on' : ''}" data-id="${anime.id}" title="Add to Watch Later" style="position:absolute;top:8px;right:48px;width:36px;height:36px;background:rgba(0,0,0,0.4);border:none;border-radius:8px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:18px">⏰</button>
         <div class="card-body">
           <div class="card-title">${title}</div>
           <div class="card-sub"><span>${ep}</span></div>
@@ -2889,6 +3029,26 @@
         else { favorites.push(id); btn.classList.add('on'); toast('Added to favourites', 'ok') }
         localStorage.setItem('maf', JSON.stringify(favorites));
       });
+
+      const watchLaterBtn = card.querySelector('.card-watchlater');
+      if (watchLaterBtn) {
+        watchLaterBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          const btn = e.currentTarget;
+          const id = parseInt(btn.dataset.id);
+          let watchLater = JSON.parse(localStorage.getItem('mwl') || '[]');
+          if (watchLater.includes(id)) {
+            watchLater = watchLater.filter(x => x !== id);
+            btn.classList.remove('on');
+            toast('Removed from watch later');
+          } else {
+            watchLater.push(id);
+            btn.classList.add('on');
+            toast('Added to watch later', 'ok');
+          }
+          localStorage.setItem('mwl', JSON.stringify(watchLater));
+        });
+      }
       card.querySelector('.card-inner').addEventListener('click', e => {
         if (e.target.closest('.card-fav')) return;
         const inner = e.currentTarget;
@@ -3053,26 +3213,69 @@
     window.addEventListener('resize', updateAllIndicators);
 
     function switchView(view) {
+      const overlay = document.getElementById('view-transition-overlay');
+      
+      // Show overlay with blur effect
+      if (overlay) overlay.classList.add('active');
+
       document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById(`nav-${view}`);
       if (activeBtn) activeBtn.classList.add('active');
       updateAllIndicators();
 
-      const isHome = view === 'home';
-      const hero = document.getElementById('hero-section');
-      const genres = document.getElementById('genre-bar');
-      const ticker = document.querySelector('.ticker');
+      // Add exiting animation to current view
+      const allViews = ['home-view', 'history-view', 'favorites-view', 'popular-view', 'tv-view', 'movie-view', 'schedule-view'];
+      allViews.forEach(viewId => {
+        const el = document.getElementById(viewId);
+        if (el && el.style.display !== 'none') {
+          el.classList.add('exiting');
+        }
+      });
 
-      if (hero) hero.style.display = isHome ? '' : 'none';
-      if (genres) genres.style.display = isHome ? '' : 'none';
-      if (ticker) ticker.style.display = isHome ? '' : 'none';
+      // Wait for exit animation, then switch views
+      setTimeout(() => {
+        const isHome = view === 'home';
+        const hero = document.getElementById('hero-section');
+        const genres = document.getElementById('genre-bar');
+        const ticker = document.querySelector('.ticker');
 
-      document.getElementById('home-view').style.display = isHome ? '' : 'none';
-      document.getElementById('history-view').style.display = view === 'history' ? '' : 'none';
-      document.getElementById('favorites-view').style.display = view === 'favorites' ? '' : 'none';
+        if (hero) hero.style.display = isHome ? '' : 'none';
+        if (genres) genres.style.display = isHome ? '' : 'none';
+        if (ticker) ticker.style.display = isHome ? '' : 'none';
 
-      if (view === 'history') loadHistoryView();
-      if (view === 'favorites') loadFavoritesView();
+        // Hide all views
+        allViews.forEach(viewId => {
+          const el = document.getElementById(viewId);
+          if (el) {
+            el.style.display = 'none';
+            el.classList.remove('exiting');
+          }
+        });
+
+        // Show new view - will trigger enter animation
+        const newView = document.getElementById(`${view}-view`);
+        if (newView) {
+          newView.style.display = '';
+          newView.classList.remove('exiting');
+          // Trigger reflow to restart animation
+          void newView.offsetWidth;
+        }
+
+        // Hide overlay after transition completes
+        setTimeout(() => {
+          if (overlay) overlay.classList.remove('active');
+        }, 100);
+
+        // Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (view === 'history') loadHistoryView();
+        if (view === 'favorites') loadFavoritesView();
+        if (view === 'popular') loadPopularView();
+        if (view === 'tv') loadTVView();
+        if (view === 'movie') loadMovieView();
+        if (view === 'schedule') loadScheduleView();
+      }, 350);
     }
 
     function loadHistoryView() {
@@ -3110,6 +3313,133 @@
       grid.innerHTML = Array(favorites.length).fill(`<div class="skel skel-card"></div>`).join('');
       const items = await gql({ id_in: favorites });
       renderGrid('favorites-view-grid', items);
+    }
+
+    let currentPage = { popular: 1, tv: 1, movie: 1, favorites: 1 };
+    let isLoadingMore = false;
+
+    async function loadPopularView() {
+      const grid = document.getElementById('popular-grid');
+      if (!grid) return;
+      currentPage.popular = 1;
+      skel('popular-grid');
+      const items = await gql({ sort: ['POPULARITY_DESC'], page: 1, perPage: 24 });
+      renderGrid('popular-grid', items);
+      setupLoadMore('popular');
+    }
+
+    async function loadTVView() {
+      const grid = document.getElementById('tv-grid');
+      if (!grid) return;
+      currentPage.tv = 1;
+      skel('tv-grid');
+      const GQL_TV = `query($page:Int){Page(page:$page,perPage:24){media(type:ANIME,format:TV,sort:POPULARITY_DESC){id title{english romaji}description coverImage{large}averageScore episodes genres relations{nodes{id type season seasonYear title{english romaji}}}studios(isMain:true){nodes{name}}}}}`;
+      try {
+        const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: GQL_TV, variables: { page: 1 } }) });
+        const items = (await r.json())?.data?.Page?.media || [];
+        renderGrid('tv-grid', items);
+        setupLoadMore('tv');
+      } catch { grid.innerHTML = `<div class="empty-state">Failed to load TV series</div>` }
+    }
+
+    async function loadMovieView() {
+      const grid = document.getElementById('movie-grid');
+      if (!grid) return;
+      currentPage.movie = 1;
+      skel('movie-grid');
+      const GQL_MOVIE = `query($page:Int){Page(page:$page,perPage:24){media(type:ANIME,format:MOVIE,sort:POPULARITY_DESC){id title{english romaji}description coverImage{large}averageScore episodes genres relations{nodes{id type season seasonYear title{english romaji}}}studios(isMain:true){nodes{name}}}}}`;
+      try {
+        const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: GQL_MOVIE, variables: { page: 1 } }) });
+        const items = (await r.json())?.data?.Page?.media || [];
+        renderGrid('movie-grid', items);
+        setupLoadMore('movie');
+      } catch { grid.innerHTML = `<div class="empty-state">Failed to load movies</div>` }
+    }
+
+    function setupLoadMore(category) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !isLoadingMore) {
+            loadMoreItems(category);
+          }
+        });
+      }, { rootMargin: '200px' });
+
+      const sentinel = document.getElementById(`${category}-grid`)?.nextElementSibling || document.createElement('div');
+      if (sentinel) observer.observe(sentinel);
+    }
+
+    async function loadMoreItems(category) {
+      isLoadingMore = true;
+      currentPage[category]++;
+      
+      const gridId = `${category}-grid`;
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+
+      let items = [];
+      if (category === 'popular') {
+        items = await gql({ sort: ['POPULARITY_DESC'], page: currentPage.popular, perPage: 24 });
+      } else if (category === 'tv') {
+        const GQL_TV = `query($page:Int){Page(page:$page,perPage:24){media(type:ANIME,format:TV,sort:POPULARITY_DESC){id title{english romaji}description coverImage{large}averageScore episodes genres relations{nodes{id type season seasonYear title{english romaji}}}studios(isMain:true){nodes{name}}}}}`;
+        const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: GQL_TV, variables: { page: currentPage.tv } }) });
+        items = (await r.json())?.data?.Page?.media || [];
+      } else if (category === 'movie') {
+        const GQL_MOVIE = `query($page:Int){Page(page:$page,perPage:24){media(type:ANIME,format:MOVIE,sort:POPULARITY_DESC){id title{english romaji}description coverImage{large}averageScore episodes genres relations{nodes{id type season seasonYear title{english romaji}}}studios(isMain:true){nodes{name}}}}}`;
+        const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: GQL_MOVIE, variables: { page: currentPage.movie } }) });
+        items = (await r.json())?.data?.Page?.media || [];
+      }
+
+      if (items.length > 0) {
+        items.forEach((item, idx) => {
+          grid.appendChild(makeCard(item, idx));
+        });
+      }
+      isLoadingMore = false;
+    }
+
+    async function loadScheduleView() {
+      const container = document.getElementById('schedule-container');
+      if (!container) return;
+      skel('schedule-container', 5);
+      
+      const GQL_SCHEDULE = `query{Page(perPage:50){airingSchedules(sort:TIME,airingAt_greater:0){id airingAt episode media{id title{english romaji}coverImage{large}genres}}}}`;;
+      try {
+        const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: GQL_SCHEDULE }) });
+        const schedules = (await r.json())?.data?.Page?.airingSchedules || [];
+        
+        const byDay = {};
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        schedules.forEach(s => {
+          const d = new Date(s.airingAt * 1000);
+          const dayName = days[d.getDay()];
+          if (!byDay[dayName]) byDay[dayName] = [];
+          byDay[dayName].push(s);
+        });
+
+        let html = '';
+        Object.entries(byDay).forEach(([day, items]) => {
+          html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <div style="background:rgba(230,57,70,0.1);padding:12px 16px;font-weight:600;border-bottom:1px solid var(--border)">${day}</div>
+            <div>`;
+          items.forEach(s => {
+            const time = new Date(s.airingAt * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const title = s.media.title.english || s.media.title.romaji;
+            html += `<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="go(${s.media.id})">
+              <div>
+                <div style="font-weight:600;font-size:13px;margin-bottom:4px">${title}</div>
+                <div style="font-size:11px;color:var(--muted)">${s.media.genres?.join(', ') || 'Anime'}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-weight:600;color:var(--accent);font-size:12px">${time}</div>
+                <div style="font-size:11px;color:var(--muted)">EP ${s.episode}</div>
+              </div>
+            </div>`;
+          });
+          html += `</div></div>`;
+        });
+        container.innerHTML = html;
+      } catch { container.innerHTML = `<div class="empty-state">Failed to load schedule</div>` }
     }
 
     function buildGenreBar() {
@@ -3181,6 +3511,10 @@
       loadHomepage();
     });
     document.getElementById('nav-home').addEventListener('click', () => document.getElementById('nav-logo').click());
+    document.getElementById('nav-popular').addEventListener('click', () => switchView('popular'));
+    document.getElementById('nav-tv').addEventListener('click', () => switchView('tv'));
+    document.getElementById('nav-movie').addEventListener('click', () => switchView('movie'));
+    document.getElementById('nav-schedule').addEventListener('click', () => switchView('schedule'));
     document.getElementById('nav-history').addEventListener('click', () => switchView('history'));
     document.getElementById('nav-favorites').addEventListener('click', () => switchView('favorites'));
 
@@ -3215,11 +3549,11 @@
     document.getElementById('party-join-btn').addEventListener('click', () => {
       const code = document.getElementById('party-code-input').value.trim().toUpperCase();
       if(!code) { toast('Enter a code'); return; }
-      const party = JSON.parse(localStorage.getItem('pw') || '{}');
-      if(party.code === code && party.id) {
+      const sessionData = JSON.parse(localStorage.getItem('pw_'+code) || 'null');
+      if(sessionData && sessionData.id) {
         closeModal('party-modal');
         toast('Joining party...');
-        setTimeout(() => window.location.href = `watch.html?id=${party.id}&ep=${party.ep||1}`, 600);
+        setTimeout(() => window.location.href = `watch.html?id=${sessionData.id}&ep=${sessionData.ep||1}&code=${code}`, 600);
       } else {
         toast('Invalid code');
       }
@@ -3518,6 +3852,72 @@
 
     console.log('%cMARSELO ANIME', 'font-size:24px;font-family:Bebas Neue;color:#e63946;letter-spacing:0.06em');
     console.log('%cAnimation engine active 🎌', 'color:#7c5cff;font-size:12px');
+
+    // ========== PROTECTION CODE ==========
+    // Disable right-click
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      return false;
+    });
+
+    // Block all DevTools keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // F12
+      if (e.keyCode === 123 || e.key === 'F12') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      // Mac: Cmd+Option+I
+      if ((e.metaKey || e.ctrlKey) && e.altKey && (e.keyCode === 73 || e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      // Mac: Cmd+Option+U
+      if ((e.metaKey || e.ctrlKey) && e.altKey && (e.keyCode === 85 || e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      // Ctrl+Shift+I
+      if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      // Ctrl+Shift+C
+      if (e.ctrlKey && e.shiftKey && (e.keyCode === 67 || e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      // Ctrl+Shift+J
+      if (e.ctrlKey && e.shiftKey && (e.keyCode === 74 || e.key === 'j' || e.key === 'J')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      // Ctrl+Shift+K
+      if (e.ctrlKey && e.shiftKey && (e.keyCode === 75 || e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, true);
+
+    // Clear console every second
+    setInterval(() => {
+      console.clear();
+    }, 1000);
+
+    // Override console methods
+    const noop = () => {};
+    console.log = noop;
+    console.warn = noop;
+    console.error = noop;
+    console.debug = noop;
+    console.info = noop;
 
   </script>
 </body>
