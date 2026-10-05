@@ -11,7 +11,6 @@
   "url": "https://marselo.dpdns.org/"
 }
 </script>
-  <script src="https://pl30635179.effectivecpmnetwork.com/8a/a7/9c/8aa79c25db467809ce156d19f37b4974.js"></script>
   <link rel="icon" type="image/x-icon" href="https://i.ibb.co/mQYwYDN/marseloanime.png">
   <meta name="description"
     content="Watch anime online free on Marselo. Stream English subbed and dubbed anime. Best alternative to HiAnime, AniWave, 9Anime, GogoAnime.">
@@ -19,6 +18,7 @@
   <link rel="icon" type="image/x-icon" href="https://i.ibb.co/mQYwYDN/marseloanime.png">
   <meta name="description"
     content="Watch anime online free on Marselo. Stream English subbed and dubbed anime. Best alternative to HiAnime, AniWave, 9Anime, GogoAnime.">
+  <script src="https://quge5.com/88/tag.min.js" data-zone="255305" async data-cfasync="false"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MARSELO ANIME</title>
@@ -278,6 +278,104 @@
 
     .search-wrap input::placeholder {
       color: var(--muted)
+    }
+
+    .search-results {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      max-height: 500px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      z-index: 1000;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      animation: slideDownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .search-results::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .search-results::-webkit-scrollbar-track {
+      background: transparent;
+      margin: 4px 0;
+    }
+
+    .search-results::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+      border: 2px solid var(--surface);
+    }
+
+    .search-results::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
+    }
+
+    @keyframes slideDownFade {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .search-results-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .search-result-item {
+      padding: 12px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-item:hover {
+      background: var(--surface-2);
+    }
+
+    .search-result-poster {
+      width: 40px;
+      height: 60px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+
+    .search-result-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .search-result-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .search-result-meta {
+      font-size: 11px;
+      color: var(--muted);
     }
 
     .party-btn {
@@ -601,6 +699,13 @@
       to {
         opacity: 1;
       }
+    }
+
+    /* Infinite scroll sentinel - invisible trigger for loading more */
+    .load-sentinel {
+      height: 1px;
+      margin: 20px 0;
+      pointer-events: none;
     }
 
     /* View transition overlay */
@@ -1183,6 +1288,29 @@
       letter-spacing: 0.05em;
       color: var(--muted);
       margin-bottom: 10px
+    }
+
+    .season-select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .season-select:hover {
+      border-color: rgba(230, 57, 70, 0.3);
+    }
+
+    .season-select:focus {
+      outline: none;
+      border-color: rgba(230, 57, 70, 0.5);
+      box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
     }
 
     .season-chips {
@@ -2677,6 +2805,9 @@
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
+        <div class="search-results" id="search-results" style="display: none;">
+          <div class="search-results-content" id="search-results-content"></div>
+        </div>
       </div>
       <button class="party-btn" id="join-party-btn" title="Join Watch Party">📍 Party</button>
       <button class="icon-btn spin" id="settings-btn" title="Settings">
@@ -2984,8 +3115,6 @@
       const title = anime.title.english || anime.title.romaji;
       const ep = (anime.episodes && anime.episodes > 0) ? `${anime.episodes} eps` : 'Ongoing';
       const fav = favorites.includes(anime.id);
-      let watchLater = JSON.parse(localStorage.getItem('mwl') || '[]');
-      const isWatchLater = watchLater.includes(anime.id);
       const card = document.createElement('div');
       card.className = 'card';
       if (small) card.style.cssText = 'width:160px;height:240px;flex-shrink:0';
@@ -2996,8 +3125,7 @@
         <img src="${anime.coverImage.large}" loading="lazy" alt="${title}">
         <div class="card-gradient"></div>
         <div class="card-score"><svg viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.771l-7.416 3.642 1.48-8.279L0 9.306l8.332-1.151z"/></svg>${anime.averageScore || '—'}</div>
-        <button class="card-fav${fav ? ' on' : ''}" data-id="${anime.id}" title="Add to Favorites"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        <button class="card-watchlater${isWatchLater ? ' on' : ''}" data-id="${anime.id}" title="Add to Watch Later" style="position:absolute;top:8px;right:48px;width:36px;height:36px;background:rgba(0,0,0,0.4);border:none;border-radius:8px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:18px">⏰</button>
+        <button class="card-fav${fav ? ' on' : ''}" data-id="${anime.id}"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         <div class="card-body">
           <div class="card-title">${title}</div>
           <div class="card-sub"><span>${ep}</span></div>
@@ -3029,26 +3157,6 @@
         else { favorites.push(id); btn.classList.add('on'); toast('Added to favourites', 'ok') }
         localStorage.setItem('maf', JSON.stringify(favorites));
       });
-
-      const watchLaterBtn = card.querySelector('.card-watchlater');
-      if (watchLaterBtn) {
-        watchLaterBtn.addEventListener('click', e => {
-          e.stopPropagation();
-          const btn = e.currentTarget;
-          const id = parseInt(btn.dataset.id);
-          let watchLater = JSON.parse(localStorage.getItem('mwl') || '[]');
-          if (watchLater.includes(id)) {
-            watchLater = watchLater.filter(x => x !== id);
-            btn.classList.remove('on');
-            toast('Removed from watch later');
-          } else {
-            watchLater.push(id);
-            btn.classList.add('on');
-            toast('Added to watch later', 'ok');
-          }
-          localStorage.setItem('mwl', JSON.stringify(watchLater));
-        });
-      }
       card.querySelector('.card-inner').addEventListener('click', e => {
         if (e.target.closest('.card-fav')) return;
         const inner = e.currentTarget;
@@ -3118,6 +3226,7 @@
     }
 
     async function loadHomepage() {
+      currentPage.home = 1;
       skel('top-grid', 10); skel('main-grid'); skel('rated-grid');
       const [top, trending, rated] = await Promise.all([
         gql({ sort: ['SCORE_DESC'] }),
@@ -3127,6 +3236,7 @@
       renderGrid('top-grid', top.slice(0, 10), true);
       renderGrid('main-grid', trending);
       renderGrid('rated-grid', rated);
+      setupLoadMore('home');
       buildContinueWatching();
     }
 
@@ -3165,7 +3275,7 @@
           <div class="stat-block"><strong>${ep}</strong><span>Episodes</span></div>
           <div class="stat-block"><strong>${(a.genres || [])[0] || '—'}</strong><span>Genre</span></div>
         </div>
-        ${related.length ? `<div class="season-row"><div class="season-label">Related Series</div><div class="season-chips"><button class="s-chip active">This Season</button>${related.map(r => `<button class="s-chip" data-id="${r.id}">${r.season ? r.season + ' ' + r.seasonYear : 'Alt'} — ${(r.title.english || r.title.romaji).slice(0, 18)}</button>`).join('')}</div></div>` : ''}
+        ${related.length ? `<div class="season-row"><div class="season-label">Seasons</div><select class="season-select" id="related-season-select"><option value="${a.id}">This Season</option>${related.map(r => `<option value="${r.id}">${r.season ? r.season + ' ' + r.seasonYear : 'Alternative'} — ${r.title.english || r.title.romaji}</option>`).join('')}</select></div>` : ''}
         <div class="detail-actions">
           <button class="btn btn-primary" id="d-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>Watch Now</button>
           <button class="share-btn" id="d-share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
@@ -3179,6 +3289,17 @@
         navigator.clipboard?.writeText(url);
         toast('Link copied!', 'ok');
       };
+      
+      // Handle season selector
+      const seasonSelect = document.getElementById('related-season-select');
+      if(seasonSelect) {
+        seasonSelect.addEventListener('change', (e) => {
+          if(e.target.value && e.target.value != a.id) {
+            openDetailModal(e.target.value);
+          }
+        });
+      }
+      
       body.querySelectorAll('.s-chip[data-id]').forEach(btn => {
         btn.addEventListener('click', () => openDetailModal(btn.dataset.id));
       });
@@ -3306,16 +3427,19 @@
       const grid = document.getElementById('favorites-view-grid');
       if (!grid) return;
       favorites = JSON.parse(localStorage.getItem('maf') || '[]');
+      currentPage.favorites = 1;
       if (!favorites.length) {
         grid.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><h4>No Favorites Yet</h4><p>Add anime to your favorites list to see them here.</p></div>`;
         return;
       }
       grid.innerHTML = Array(favorites.length).fill(`<div class="skel skel-card"></div>`).join('');
-      const items = await gql({ id_in: favorites });
+      const items = await gql({ id_in: favorites, page: 1, perPage: 24 });
+      grid.innerHTML = '';
       renderGrid('favorites-view-grid', items);
+      setupLoadMore('favorites');
     }
 
-    let currentPage = { popular: 1, tv: 1, movie: 1, favorites: 1 };
+    let currentPage = { home: 1, popular: 1, tv: 1, movie: 1, favorites: 1 };
     let isLoadingMore = false;
 
     async function loadPopularView() {
@@ -3357,16 +3481,27 @@
     }
 
     function setupLoadMore(category) {
+      // Create sentinel element if it doesn't exist
+      const grid = document.getElementById(`${category}-grid`);
+      if (!grid) return;
+      
+      let sentinel = grid.nextElementSibling;
+      if (!sentinel || !sentinel.classList.contains('load-sentinel')) {
+        sentinel = document.createElement('div');
+        sentinel.className = 'load-sentinel';
+        sentinel.id = `sentinel-${category}`;
+        grid.parentNode.insertBefore(sentinel, grid.nextSibling);
+      }
+
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting && !isLoadingMore) {
             loadMoreItems(category);
           }
         });
-      }, { rootMargin: '200px' });
+      }, { rootMargin: '300px' });
 
-      const sentinel = document.getElementById(`${category}-grid`)?.nextElementSibling || document.createElement('div');
-      if (sentinel) observer.observe(sentinel);
+      observer.observe(sentinel);
     }
 
     async function loadMoreItems(category) {
@@ -3378,7 +3513,9 @@
       if (!grid) return;
 
       let items = [];
-      if (category === 'popular') {
+      if (category === 'home') {
+        items = await gql({ sort: ['TRENDING_DESC'], page: currentPage.home, perPage: 24 });
+      } else if (category === 'popular') {
         items = await gql({ sort: ['POPULARITY_DESC'], page: currentPage.popular, perPage: 24 });
       } else if (category === 'tv') {
         const GQL_TV = `query($page:Int){Page(page:$page,perPage:24){media(type:ANIME,format:TV,sort:POPULARITY_DESC){id title{english romaji}description coverImage{large}averageScore episodes genres relations{nodes{id type season seasonYear title{english romaji}}}studios(isMain:true){nodes{name}}}}}`;
@@ -3388,12 +3525,16 @@
         const GQL_MOVIE = `query($page:Int){Page(page:$page,perPage:24){media(type:ANIME,format:MOVIE,sort:POPULARITY_DESC){id title{english romaji}description coverImage{large}averageScore episodes genres relations{nodes{id type season seasonYear title{english romaji}}}studios(isMain:true){nodes{name}}}}}`;
         const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: GQL_MOVIE, variables: { page: currentPage.movie } }) });
         items = (await r.json())?.data?.Page?.media || [];
+      } else if (category === 'favorites') {
+        items = await gql({ id_in: favorites, page: currentPage.favorites, perPage: 24 });
       }
 
       if (items.length > 0) {
         items.forEach((item, idx) => {
           grid.appendChild(makeCard(item, idx));
         });
+        // Re-setup observer for new items
+        setupLoadMore(category);
       }
       isLoadingMore = false;
     }
@@ -3450,12 +3591,14 @@
           bar.querySelectorAll('.genre-pill').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           updateAllIndicators();
+          currentPage.home = 1;
           document.getElementById('grid-label').textContent = `${btn.dataset.g}`;
           document.getElementById('rated-section').style.display = 'none';
           document.getElementById('cw-section').style.display = 'none';
           skel('main-grid');
           const r = await gql({ genre: btn.dataset.g, sort: ['POPULARITY_DESC'] });
           renderGrid('main-grid', r);
+          setupLoadMore('home');
         });
       });
     }
@@ -3472,34 +3615,59 @@
     });
 
     document.getElementById('random-btn').addEventListener('click', async () => {
+      currentPage.home = 1;
       document.getElementById('grid-label').textContent = 'Random Pick';
       skel('main-grid', 12);
       const id = Math.floor(Math.random() * 15000) + 1;
       const r = await gql({ id });
       renderGrid('main-grid', r.length ? r : []);
+      setupLoadMore('home');
       if (r.length) toast('Found something for you!', 'ok');
-      else { const t = await gql({ sort: ['TRENDING_DESC'] }); renderGrid('main-grid', t) }
+      else { const t = await gql({ sort: ['TRENDING_DESC'] }); renderGrid('main-grid', t); setupLoadMore('home') }
     });
 
     let searchTimer;
     document.getElementById('search-input').addEventListener('input', e => {
       clearTimeout(searchTimer);
       const q = e.target.value.trim();
+      const searchResults = document.getElementById('search-results');
+      const searchResultsContent = document.getElementById('search-results-content');
+
       searchTimer = setTimeout(async () => {
         if (q.length > 2) {
-          switchView('home');
-          document.getElementById('grid-label').textContent = `"${q}"`;
-          document.getElementById('rated-section').style.display = 'none';
-          document.getElementById('cw-section').style.display = 'none';
-          skel('main-grid');
-          renderGrid('main-grid', await gql({ search: q }));
+          const items = await gql({ search: q });
+          
+          if (items.length > 0) {
+            searchResultsContent.innerHTML = items.map(anime => {
+              const title = anime.title.english || anime.title.romaji;
+              const ep = (anime.episodes && anime.episodes > 0) ? `${anime.episodes} eps` : 'Ongoing';
+              return `
+                <div class="search-result-item" onclick="openDetailModal(${anime.id}); document.getElementById('search-results').style.display='none';">
+                  <img src="${anime.coverImage.large}" alt="${title}" class="search-result-poster" onerror="this.src='https://via.placeholder.com/40x60'">
+                  <div class="search-result-info">
+                    <div class="search-result-title">${title}</div>
+                    <div class="search-result-meta">${ep} • ${anime.averageScore || '—'} ⭐</div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+            searchResults.style.display = 'block';
+          } else {
+            searchResultsContent.innerHTML = `<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No results found</div>`;
+            searchResults.style.display = 'block';
+          }
         } else {
-          document.getElementById('grid-label').textContent = 'Trending Now';
-          document.getElementById('rated-section').style.display = '';
-          buildContinueWatching();
-          loadHomepage();
+          searchResults.style.display = 'none';
         }
-      }, 380);
+      }, 300);
+    });
+
+    // Close search results when clicking outside
+    document.addEventListener('click', e => {
+      const searchWrap = document.querySelector('.search-wrap');
+      if (!searchWrap?.contains(e.target)) {
+        document.getElementById('search-results').style.display = 'none';
+      }
     });
 
     document.getElementById('nav-logo').addEventListener('click', () => {
