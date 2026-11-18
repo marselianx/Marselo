@@ -1792,7 +1792,7 @@
 
     /* ---------- go to player (circular reveal) ---------- */
     function go(id, ep = 1, originEl = null) {
-      const url = `watch.html?id=${id}&ep=${ep}`;
+      const url = `watch?id=${id}&ep=${ep}`;
       const pt = $('page-transition');
       if (!pt || reduceMotion()) { window.location.href = url; return; }
       const rect = originEl && originEl.getBoundingClientRect ? originEl.getBoundingClientRect() : null;
@@ -2267,7 +2267,7 @@
       $('d-play').onclick = e => { if (!canWatch) return; closeDetail(); go(a.id, resume, e.currentTarget); };
       $('d-favbtn').onclick = e => { toggleFavorite(a.id, e.currentTarget); e.currentTarget.querySelector('span').textContent = favorites.includes(a.id) ? 'Favourited' : 'Favourite'; };
       $('d-share').onclick = async () => {
-        const url = `https://anime.marse.lol/watch.html?id=${a.id}&ep=1`;
+        const url = `https://anime.marse.lol/watch?id=${a.id}&ep=1`;
         if (navigator.share && isTouch) { try { await navigator.share({ title, url }); return; } catch (e) { } }
         try { await navigator.clipboard.writeText(url); toast('Link copied!', 'ok'); } catch { toast(url); }
       };
