@@ -80,7 +80,7 @@ header::before{content:'';position:absolute;inset:0;border-radius:inherit;paddin
 /* ── layout ── */
 .watch-layout{display:grid;grid-template-columns:minmax(0,1fr) var(--sidebar-w);gap:20px;padding:16px 5vw 0;align-items:start;max-width:1600px;margin:0 auto;animation:fadeUp .7s var(--ease) both}
 @keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-@media(max-width:1100px){.watch-layout{grid-template-columns:1fr;--sidebar-w:100%}}
+@media(max-width:1100px){.watch-layout{grid-template-columns:minmax(0,1fr);--sidebar-w:100%}}
 @media(max-width:640px){.watch-layout{padding:10px 12px 0;gap:14px}}
 .main-col{min-width:0}
 .mobile-slot{display:none}
@@ -123,7 +123,7 @@ header::before{content:'';position:absolute;inset:0;border-radius:inherit;paddin
 .btn-toggle:hover{border-color:var(--border-hover);color:var(--text)}
 .btn-toggle.on{background:rgba(57,217,138,.12);color:var(--green);border-color:rgba(57,217,138,.35)}
 .btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;filter:none!important}
-.telemetry{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:7px 12px;border-radius:999px;display:flex;gap:14px;align-items:center;font-family:ui-monospace,monospace;white-space:nowrap}
+.telemetry{flex-wrap:wrap;row-gap:4px;font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:7px 12px;border-radius:999px;display:flex;gap:14px;align-items:center;font-family:ui-monospace,monospace}
 .telemetry span{color:var(--accent-light);font-weight:700}
 .telemetry .st.playing{color:var(--green)}
 @media(max-width:640px){
@@ -499,17 +499,41 @@ const fmtClock=s=>{s=Math.max(0,Math.floor(s));const h=Math.floor(s/3600),m=Math
 const FORMAT_LABEL={TV:'TV',TV_SHORT:'TV Short',MOVIE:'Movie',SPECIAL:'Special',OVA:'OVA',ONA:'ONA',MUSIC:'Music'};
 
 /* ── Servers ── */
+/* To add a server: one line below. url(id,ep,f) gets the AniList id, episode number and 'sub'|'dub'.
+   talks:true = the player posts play/time events back to this page (lets us notice a silent, dead player). */
 const SERVERS=[
-  {id:'tryembed',  label:'⚡  Server 1'},
-  {id:'megaplay',  label:'🌐  Server 2'},
-  {id:'4animo',    label:'⭐  Server 3'},
-  {id:'vidnest',   label:'🚀  Server 4'},
+  {id:'tryembed', label:'⚡  Server 1', talks:true, url:(id,ep,f)=>`https://tryembed.us.cc/embed/anime/${id}/${ep}/${f}?autoplay=${cfgAutoplay}&autoNext=false`},
+  {id:'megaplay', label:'🌐  Server 2', url:(id,ep,f)=>`https://megaplay.buzz/stream/ani/${id}/${ep}/${f}`},
+  {id:'4animo',   label:'⭐  Server 3', url:(id,ep,f)=>`https://cdn.4animo.xyz/embed/ani/${id}/${ep}/${f}?k=1`},
+  {id:'vidnest',  label:'🚀  Server 4', url:(id,ep,f)=>`https://vidnest.fun/anime/${id}/${ep}/${f}`},
 ];
-function embedUrl(id,ep,f,srv){
-  if(srv==='megaplay') return`https://megaplay.buzz/stream/ani/${id}/${ep}/${f}`;
-  if(srv==='4animo')   return`https://cdn.4animo.xyz/embed/ani/${id}/${ep}/${f}?k=1`;
-  if(srv==='vidnest')  return`https://vidnest.fun/anime/${id}/${ep}/${f}`;
-  return`https://tryembed.us.cc/embed/anime/${id}/${ep}/${f}?autoplay=${cfgAutoplay}&autoNext=false`;
+function embedUrl(id,ep,f,srv){return(SERVERS.find(s=>s.id===srv)||SERVERS[0]).url(id,ep,f)}
+const srvName=id=>((SERVERS.find(s=>s.id===id)||{}).label||'Server').replace(/[^\w ]/g,'').trim();
+
+/* ── Server failover: notice a dead server and move to the next one ── */
+let failTried=new Set(),probeTimer=null,gotEvent=false,autoSwitched=null,failToast=null;
+function nextServer(){const i=Math.max(0,SERVERS.findIndex(s=>s.id===server));for(let k=1;k<SERVERS.length;k++){const c=SERVERS[(i+k)%SERVERS.length];if(!failTried.has(c.id))return c}return null}
+function setServer(id,save){server=id;if(save)localStorage.setItem('player_server',id);const sel=$('srv-select');if(sel)sel.value=id;reloadPlayer()}
+function serverFailed(why){
+  if(failToast)failToast.remove();
+  failTried.add(server);
+  const from=server,n=nextServer();
+  if(n){
+    autoSwitched=from;setServer(n.id,false);
+    failToast=toast(`${srvName(from)} isn't responding — switched to ${srvName(n.id)}`,'err',{label:'Undo',fn:()=>{failTried.clear();setServer(from,false)}});
+  }else{
+    failToast=toast('No server is responding for this episode right now. Try again in a bit.','err',{label:'Retry',fn:()=>{failTried.clear();reloadPlayer()}});
+  }
+}
+function watchServer(){
+  clearTimeout(probeTimer);gotEvent=false;
+  const srv=server,ep=curEp,fm=fmt,url=embedUrl(ANIME_ID,ep,fm,srv);
+  const same=()=>srv===server&&ep===curEp&&fm===fmt;
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),9000);
+  // no-cors: we can't read the reply, but a host that is down, blocked or too slow rejects
+  fetch(url,{mode:'no-cors',cache:'no-store',signal:ctl.signal}).then(()=>clearTimeout(t)).catch(()=>{clearTimeout(t);if(same())serverFailed('unreachable')});
+  const s=SERVERS.find(x=>x.id===srv);
+  if(s&&s.talks)probeTimer=setTimeout(()=>{if(same()&&!gotEvent)serverFailed('silent')},25000);
 }
 
 /* ── Timer ── */
@@ -590,7 +614,6 @@ function buildPage(a){
         <div class="fmt-group"><button class="fmt-btn${fmt==='sub'?' on':''}" id="fmt-sub">SUB</button><button class="fmt-btn${fmt==='dub'?' on':''}" id="fmt-dub">DUB</button></div>
         <div class="stream-actions">
           <button class="icon-btn" id="btn-share">${I.share}<span>Share</span></button>
-          <button class="icon-btn danger" id="btn-report">${I.flag}<span>Report</span></button>
         </div>
       </div>
 
@@ -665,6 +688,7 @@ function buildPage(a){
   initComments(a);
   placeEpisodesPanel();
   revealPanels();
+  watchServer();
 }
 
 /* ── motion helpers ── */
@@ -792,6 +816,7 @@ function offerResume(){
 /* ── Navigation ── */
 function goEp(ep){
   if(ep===curEp)return;
+  failTried.clear();
   hideUpnext();
   curEp=ep;resumeOffered=false;lastCt=0;lastDur=0;
   if(Math.floor((ep-1)/CH)!==epRange){epRange=Math.floor((ep-1)/CH);buildEpGrid()}else updateEpBtns();
@@ -825,6 +850,7 @@ function reloadPlayer(){
   const srv=$('loader-srv');if(srv)srv.textContent=(SERVERS.find(x=>x.id===server)||{}).label?.replace(/[^\w ]/g,'').trim()||'stream';
   const w=$('pwrap');if(w)w.classList.remove('playing');
   const mt=$('meta-time');if(mt)mt.style.display='none';
+  watchServer();
 }
 function seekPlayer(abs){
   const f=$('player');if(!f||!f.contentWindow)return;
@@ -884,7 +910,7 @@ function wireControls(){
   const mode=$('ep-mode');if(mode)mode.addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b)return;epMode=b.dataset.m;mode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));buildEpGrid()});
 
   $('srv-select').addEventListener('change',function(){
-    server=this.value;localStorage.setItem('player_server',server);
+    failTried.clear();server=this.value;localStorage.setItem('player_server',server);
     reloadPlayer();
     const name=(SERVERS.find(s=>s.id===server)||{}).label||'Server';
     toast(`${name.replace(/[^\w ]/g,'').trim()} active`);
@@ -896,18 +922,6 @@ function wireControls(){
     const url=location.href.split('#')[0];
     if(navigator.share&&isTouch){try{await navigator.share({title:document.title,url});return}catch(e){}}
     try{await navigator.clipboard.writeText(url);toast('Link copied','ok')}catch{toast('Could not copy link','err')}
-  });
-  $('btn-report').addEventListener('click',async function(){
-    if(!animeData)return;
-    this.disabled=true;
-    const title=T(animeData);
-    const srvName=((SERVERS.find(s=>s.id===server)||{}).label||'Unknown').replace(/[^\w ]/g,'').trim();
-    const payload={content:`🚩 **Episode Report**`,embeds:[{title,description:`**Episode:** ${curEp}\n**Server:** ${srvName}\n**Audio:** ${fmt.toUpperCase()}`,color:16711680,footer:{text:`Anime ID: ${ANIME_ID}`}}]};
-    try{
-      await fetch('https://discord.com/api/webhooks/1521390504976187524/0PMKdVuZ2EzxW0O7nVvMPCRtLxVfLawAllKBB94kUu1ZaXnpuYaZCL8b7bXdYR9hzveA',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      toast('Report submitted — thanks!','ok');
-    }catch{toast('Failed to submit report','err')}
-    setTimeout(()=>{this.disabled=false},8000);
   });
   $('hdr-fav').addEventListener('click',()=>{
     favorites=ls.get('maf',[]);const id=ANIME_ID,on=favorites.includes(id);
@@ -947,7 +961,7 @@ function toggleLights(){document.body.classList.toggle('lights-on');$('ctrl-ligh
 $('lights-overlay').addEventListener('click',()=>{if(document.body.classList.contains('lights-on'))toggleLights()});
 function setFmt(f){
   if(f===fmt)return;
-  fmt=f;localStorage.setItem('player_fmt',f);
+  failTried.clear();fmt=f;localStorage.setItem('player_fmt',f);
   $('fmt-sub').classList.toggle('on',f==='sub');$('fmt-dub').classList.toggle('on',f==='dub');
   reloadPlayer();toast(f==='sub'?'Switched to Subtitles':'Switched to Dub');
 }
@@ -961,6 +975,7 @@ function listenPlayer(){
     if(d.type==='PLAYER_EVENT'&&d.data){ev=d.data.event;ct=d.data.currentTime||0;dur=d.data.duration||0;paused=!!d.data.paused}
     else if(d.event){ev=d.event==='time'?'timeupdate':d.event==='complete'?'ended':d.event;ct=d.currentTime||d.time||0;dur=d.duration||d.total||0;paused=d.paused||false;if(d.percent!=null&&!dur)dur=ct/(d.percent/100)||0}
     if(!ev)return;
+    gotEvent=true;
     if(ct)lastCt=ct;if(dur)lastDur=dur;
     if(ev==='play'||ev==='playing'){s.textContent='Playing';s.className='st playing';if(w)w.classList.add('playing');const l=$('ploading');if(l)l.classList.add('gone')}
     else if(ev==='pause'||ev==='paused'){s.textContent='Paused';s.className='st';if(w)w.classList.remove('playing')}

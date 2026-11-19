@@ -942,6 +942,43 @@
     .ripple{position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.32);transform:scale(0);animation:rippleOut .65s var(--ease) forwards}
 @keyframes rippleOut{to{transform:scale(1);opacity:0}}
 
+    /* ═══ NEW-EPISODE BADGE ═══ */
+    .card-new { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 4; font: 800 9px 'Inter', sans-serif; letter-spacing: .08em; color: #fff; padding: 3px 7px; border-radius: 999px; background: linear-gradient(135deg, var(--accent-light), var(--accent)); box-shadow: 0 6px 16px -6px rgba(var(--accent-rgb), .9); white-space: nowrap; animation: newPulse 2.2s ease-in-out infinite }
+    @keyframes newPulse { 0%, 100% { transform: translateX(-50%) scale(1) } 50% { transform: translateX(-50%) scale(1.07) } }
+
+    /* ═══ PHONE SIZING ═══ */
+    @media (max-width: 680px) {
+      .hero-title { font-size: clamp(44px, 13.5vw, 64px); margin-bottom: 18px }
+      .hero-sub { font-size: 13.5px; margin-bottom: 26px }
+      .hero-actions { gap: 10px; flex-direction: column; align-items: center }
+      .hero-actions .btn, .hero-actions .btn + .btn { width: min(250px, 78%); padding: 12px 20px; font-size: 13px }
+      .hero-badge-row { margin-top: 30px; gap: 12px }
+      .hero-badge-num { font-size: 26px }
+      .hero-badge-label { font-size: 9px; letter-spacing: .08em }
+      .hero-divider { height: 24px }
+      .hero-scroll-hint { display: none }
+      .auth-zone { bottom: 84px; right: 10px }
+      .auth-btn { height: 36px; padding: 0 14px; font-size: 12px }
+      .auth-avatar { width: 38px; height: 38px }
+      .to-top { bottom: 132px; right: 10px; width: 38px; height: 38px }
+      .grid { gap: 10px }
+      .grid .card { height: auto; aspect-ratio: 2 / 3 }
+      .card-body { padding: 10px }
+      .card-title { font-size: 12px }
+      .card-tags { display: none }
+      .card-score { top: 8px; right: 8px; font-size: 10px; padding: 2px 7px }
+      .card-fav { top: 8px; left: 8px; width: 26px; height: 26px }
+      .card-fav svg { width: 12px; height: 12px }
+      .filters { grid-template-columns: 1fr 1fr; padding: 12px; gap: 12px 8px; border-radius: 18px }
+      .filters .f-search, .filters .genre-chips, .filters .f-foot { grid-column: 1 / -1 }
+      .presets { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none }
+      .presets::-webkit-scrollbar { display: none }
+      .preset { flex-shrink: 0 }
+      .filters .genre-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px }
+      .filters .genre-chips::-webkit-scrollbar { display: none }
+      .g-chip { flex-shrink: 0 }
+    }
+
     /* ═══ TOUCH / PHONE SMOOTHNESS ═══ */
     @media (hover: none), (pointer: coarse) {
       /* blur() inside animations re-rasterises a big layer every frame on phones: same motion, no blur */
@@ -1632,6 +1669,7 @@
       const ep = epCount && epCount > 0 ? `${epCount} ep${epCount > 1 ? 's' : ''}` : airing ? 'Airing' : anime.status === 'NOT_YET_RELEASED' ? 'Upcoming' : 'Ongoing';
       const fav = favorites.includes(anime.id);
       const cw = cwMap().get(anime.id);
+      const ne = window.__newEps && window.__newEps.get(anime.id);
       const card = document.createElement('div');
       card.className = 'card';
       card.dataset.id = anime.id;
@@ -1647,6 +1685,7 @@
         ${airing && anime.nextAiringEpisode ? `<span class="card-airing">EP ${anime.nextAiringEpisode.episode} soon</span>` : ''}
         <div class="card-score${score && score < 60 ? ' low' : ''}">${STAR}${score || '—'}</div>
         <button class="card-fav${fav ? ' on' : ''}" data-id="${anime.id}" aria-label="Toggle favourite">${HEART}</button>
+        ${ne ? `<span class="card-new" title="Episode ${ne} is out">NEW EP</span>` : ''}
         ${opts.rank ? `<span class="card-rank">${opts.rank}</span>` : ''}
         <div class="card-body">
           <div class="card-title">${esc(title)}</div>
@@ -2891,6 +2930,44 @@ document.addEventListener('pointerdown',e=>{
   const hs=document.getElementById('hero-section');
   if(hs&&'IntersectionObserver' in window)new IntersectionObserver(([e])=>b.classList.toggle('hero-off',!e.isIntersecting)).observe(hs);
 })();
+
+    /* ---------- new-episode badges (favourites + shows you're watching) ---------- */
+    (function () {
+      const NQ = 'query($ids:[Int]){Page(page:1,perPage:50){media(id_in:$ids,type:ANIME){id title{english romaji native} status episodes nextAiringEpisode{episode}}}}';
+      const maxSeen = id => { const a = (ls.get('mwe_' + id, []) || []).map(Number); const cw = cwMap().get(+id); return Math.max(0, ...a, cw ? +cw.episode || 0 : 0); };
+      const map = window.__newEps = new Map();
+      const loadStored = () => { map.clear(); const st = ls.get('mnewep', {}) || {}; Object.keys(st).forEach(k => { if (maxSeen(k) < st[k]) map.set(+k, st[k]); }); };
+      loadStored();
+      const paint = () => $$('.card[data-id]').forEach(c => {
+        const ne = map.get(+c.dataset.id), has = c.querySelector('.card-new');
+        if (ne && !has) { const p = c.querySelector('.card-poster'); if (p) { const b = document.createElement('span'); b.className = 'card-new'; b.textContent = 'NEW EP'; b.title = 'Episode ' + ne + ' is out'; p.appendChild(b); } }
+        else if (!ne && has) has.remove();
+      });
+      let last = 0, running = false;
+      async function check() {
+        if (running) return; running = true; last = Date.now();
+        try {
+          const ids = [...new Set([...(favorites || []), ...cwMap().keys()])].slice(0, 50);
+          if (!ids.length) return;
+          const d = await gql(NQ, { ids }, { ttl: 5 * 60e3 });
+          const list = (d && d.Page && d.Page.media) || [];
+          const base = ls.get('mlast', {}) || {}, stored = ls.get('mnewep', {}) || {}, fresh = [];
+          list.forEach(m => {
+            const aired = m.nextAiringEpisode ? m.nextAiringEpisode.episode - 1 : (m.episodes || 0);
+            if (!aired) return;
+            const id = String(m.id);
+            if (base[id] == null) base[id] = aired;                       // first sight = baseline (no badge for old episodes)
+            else if (aired > base[id]) { if (!(stored[id] >= aired)) fresh.push(m); stored[id] = Math.max(stored[id] || 0, aired); base[id] = aired; }
+            if (stored[id] && maxSeen(id) >= stored[id]) delete stored[id];
+          });
+          ls.set('mlast', base); ls.set('mnewep', stored);
+          loadStored(); paint();
+          if (fresh.length) toast(fresh.length === 1 ? `New episode: ${T(fresh[0])} · EP ${stored[fresh[0].id]}` : `${fresh.length} of your shows have new episodes`, 'ok', { label: 'View', fn: () => switchView('favorites') });
+        } catch (e) { } finally { running = false; }
+      }
+      setTimeout(check, 3000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { loadStored(); paint(); if (Date.now() - last > 10 * 60e3) check(); } });
+    })();
 
     /* ---------- online / offline ---------- */
     window.addEventListener('offline', () => $('offline').classList.add('show'));
