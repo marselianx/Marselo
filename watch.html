@@ -433,7 +433,30 @@ const cfg=Object.assign({autoplay:true,autonext:true,lang:'english',hideAdult:fa
 const ACCENTS={orange:['#ff7a1a','#ffb02e'],red:['#ff3b5c','#ff8a9a'],violet:['#8b5cf6','#c4a3ff'],cyan:['#06b6d4','#7de3f4'],green:['#22c55e','#8ef0b0'],pink:['#ec4899','#ffa6d0']};
 const hexRgb=h=>{const n=parseInt(h.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255]};
 const mix=(h,t,p)=>{const a=hexRgb(h);return'#'+a.map(c=>Math.round(c+(t-c)*p).toString(16).padStart(2,'0')).join('')};
-(function(){const[a,b]=ACCENTS[cfg.accent]||ACCENTS.orange,r=document.documentElement.style;r.setProperty('--accent',a);r.setProperty('--accent-2',b);r.setProperty('--accent-rgb',hexRgb(a).join(', '));r.setProperty('--accent2-rgb',hexRgb(b).join(', '));r.setProperty('--accent-light',mix(a,255,.22));r.setProperty('--accent-dark',mix(a,0,.18))})();
+
+/* ── Logo + favicon follow the accent colour ── */
+let _brandKey='';
+function brandSvg(a,b){
+  const lt=mix(a,255,.22),dk=mix(a,0,.18),m='M70 184 V86 Q70 70 84 78 L128 128 L172 78 Q186 70 186 86 V184';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a1524"/><stop offset="1" stop-color="#07070d"/></linearGradient><radialGradient id="glow" cx="50%" cy="46%" r="50%"><stop offset="0" stop-color="${a}" stop-opacity=".42"/><stop offset="1" stop-color="${a}" stop-opacity="0"/></radialGradient><linearGradient id="m" x1="64" y1="70" x2="192" y2="190" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${b}"/><stop offset=".5" stop-color="${a}"/><stop offset="1" stop-color="${dk}"/></linearGradient><linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${b}" stop-opacity=".75"/><stop offset=".5" stop-color="${a}" stop-opacity=".12"/><stop offset="1" stop-color="${a}" stop-opacity=".55"/></linearGradient><linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".14"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="sq"><rect x="8" y="8" width="240" height="240" rx="64"/></clipPath></defs><rect x="8" y="8" width="240" height="240" rx="64" fill="url(#bg)"/><g clip-path="url(#sq)"><rect width="256" height="256" fill="url(#glow)"/><rect x="8" y="8" width="240" height="120" fill="url(#sheen)"/></g><rect x="9.5" y="9.5" width="237" height="237" rx="62.5" fill="none" stroke="url(#ring)" stroke-width="3"/><path d="${m}" fill="none" stroke="${a}" stroke-opacity=".35" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 4)"/><path d="${m}" fill="none" stroke="url(#m)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function setFavicon(href,type){
+  const old=document.querySelector('link[rel="icon"]');
+  const l=document.createElement('link');l.rel='icon';l.type=type;l.href=href;
+  if(old)old.replaceWith(l);else document.head.appendChild(l);
+}
+function applyBrand(name,a,b){
+  if(a===_brandKey)return;_brandKey=a;
+  if(name==='orange'){document.querySelectorAll('.logo-mark').forEach(i=>i.src='marselo.ico');setFavicon('marselo.ico','image/x-icon');return}
+  const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(brandSvg(a,b));
+  document.querySelectorAll('.logo-mark').forEach(i=>i.src=url);
+  const im=new Image();
+  im.onload=()=>{try{const c=document.createElement('canvas');c.width=c.height=64;c.getContext('2d').drawImage(im,0,0,64,64);setFavicon(c.toDataURL('image/png'),'image/png')}catch(e){setFavicon(url,'image/svg+xml')}};
+  im.onerror=()=>setFavicon(url,'image/svg+xml');
+  im.src=url;
+}
+
+(function(){const[a,b]=ACCENTS[cfg.accent]||ACCENTS.orange,r=document.documentElement.style;r.setProperty('--accent',a);r.setProperty('--accent-2',b);r.setProperty('--accent-rgb',hexRgb(a).join(', '));r.setProperty('--accent2-rgb',hexRgb(b).join(', '));r.setProperty('--accent-light',mix(a,255,.22));r.setProperty('--accent-dark',mix(a,0,.18));applyBrand(ACCENTS[cfg.accent]?cfg.accent:'orange',a,b)})();
 document.body.classList.toggle('fx-off',!cfg.fx);
 const T=m=>{const t=(m&&m.title)||{};if(cfg.lang==='romaji')return t.romaji||t.english||t.native||'';if(cfg.lang==='native')return t.native||t.romaji||t.english||'';return t.english||t.romaji||t.native||''};
 
@@ -450,6 +473,16 @@ let cfgAutoNext    = localStorage.getItem('cfg_autonext')!=null?ls.get('cfg_auto
 let timerInterval  = null;
 let lastCt=0,lastDur=0,lastSave=0,lastCw=0,resumeOffered=false,upnextTimer=null;
 let favorites=ls.get('maf',[]);
+/* ── Scrolling tab title ── */
+let _mqTimer=null;
+function tabTitle(text){
+  window.__baseTitle=text;clearInterval(_mqTimer);
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches){document.title=text;return}
+  const s=(text+'   •   ').replace(/ /g,' ');let i=0;
+  const step=()=>{document.title=s.slice(i)+s.slice(0,i);i=(i+1)%s.length};
+  step();_mqTimer=setInterval(step,260);
+}
+
 
 /* ── AniList ── */
 const GQL = `query($id:Int){Page(page:1,perPage:1){media(id:$id,type:ANIME){
@@ -507,6 +540,11 @@ const SERVERS=[
   {id:'4animo',   label:'⭐  Server 3', url:(id,ep,f)=>`https://cdn.4animo.xyz/embed/ani/${id}/${ep}/${f}?k=1`},
   {id:'vidnest',  label:'🚀  Server 4', url:(id,ep,f)=>`https://vidnest.fun/anime/${id}/${ep}/${f}`},
 ];
+/* Sandbox: stops a player opening pop-up tabs or redirecting this page. Add ?sandbox=0 to the URL to compare without it.
+   If a server refuses to play inside a sandbox, give it sandbox:false in the list above. */
+const SANDBOX='allow-scripts allow-same-origin allow-forms allow-presentation allow-orientation-lock';
+const sandboxOn=new URLSearchParams(location.search).get('sandbox')==='1'; // off by default: all servers detect it and refuse to play
+function sandboxFor(srv){const s=SERVERS.find(x=>x.id===srv);return sandboxOn&&!(s&&s.sandbox===false)}
 function embedUrl(id,ep,f,srv){return(SERVERS.find(s=>s.id===srv)||SERVERS[0]).url(id,ep,f)}
 const srvName=id=>((SERVERS.find(s=>s.id===id)||{}).label||'Server').replace(/[^\w ]/g,'').trim();
 
@@ -575,7 +613,7 @@ function buildPage(a){
   const rels=edges.filter(e=>['SEQUEL','PREQUEL','ALTERNATIVE','SIDE_STORY','PARENT','SPIN_OFF','SUMMARY'].includes(e.relationType)&&e.node.type==='ANIME'&&e.node.format!=='MUSIC');
   allSeasons=[{id:a.id,title,cover:a.coverImage&&a.coverImage.large,color:a.coverImage&&a.coverImage.color,score:a.averageScore,eps:a.episodes,season:a.season,year:a.seasonYear,current:true},...rels.map(e=>({id:e.node.id,title:T(e.node),cover:e.node.coverImage&&e.node.coverImage.large,color:e.node.coverImage&&e.node.coverImage.color,score:e.node.averageScore,eps:e.node.episodes,season:e.node.season,year:e.node.seasonYear,rel:e.relationType,current:false}))];
 
-  document.title=`${title} — EP ${pad(curEp)} · MARSELO ANIME`;
+  tabTitle(`${title} — EP ${pad(curEp)} · MARSELO ANIME`);
   $('hdr-title').textContent=title;
   $('hdr-ep').style.display='';$('hdr-ep').textContent=`EP ${pad(curEp)}`;
   $('hdr-fav').style.display='';$('hdr-fav').classList.toggle('on',favorites.includes(a.id));
@@ -590,7 +628,7 @@ function buildPage(a){
     <div class="main-col">
       <div class="player-wrap" id="pwrap">
         <div class="player-loader" id="ploading"><div class="spinner"></div><div class="loader-label">Connecting to <b id="loader-srv">${esc(SERVERS.find(s=>s.id===server)?.label.replace(/[^\w ]/g,'').trim()||'stream')}</b>…</div></div>
-        <iframe id="player" src="${embedUrl(ANIME_ID,curEp,fmt,server)}" allowfullscreen allow="autoplay;encrypted-media;fullscreen;picture-in-picture" playsinline title="Player"></iframe>
+        <iframe id="player" ${sandboxFor(server)?`sandbox="${SANDBOX}"`:''} src="${embedUrl(ANIME_ID,curEp,fmt,server)}" allowfullscreen allow="autoplay;encrypted-media;fullscreen;picture-in-picture" playsinline title="Player"></iframe>
         <div class="upnext" id="upnext"><div class="ring" id="upnext-ring"><span id="upnext-n">8</span></div><div class="txt"><small>Up next</small><b id="upnext-title"></b></div><button class="btn btn-primary" id="upnext-go">Play now</button><button class="btn btn-ghost" id="upnext-cancel">Cancel</button></div>
       </div>
 
@@ -600,6 +638,7 @@ function buildPage(a){
           <button class="btn btn-ghost" id="ctrl-prev" title="Previous episode (P)">${I.prev}<span class="lbl">Prev</span></button>
           <button class="btn btn-ghost" id="ctrl-next" title="Next episode (N)"><span class="lbl">Next</span>${I.next}</button>
           <button class="btn btn-toggle${cfgAutoNext?' on':''}" id="ctrl-autonext" title="Auto-play next episode">${I.auto}<span class="lbl">Auto Next ${cfgAutoNext?'ON':'OFF'}</span></button>
+          <button class="btn btn-ghost" id="ctrl-watched" title="Mark this episode as watched / unwatched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span class="lbl">Mark watched</span></button>
           <button class="btn btn-ghost" id="ctrl-theater" title="Theater mode (T)">${I.theater}<span class="lbl">Theater</span></button>
           <button class="btn btn-ghost" id="ctrl-lights" title="Lights off (L)">${I.lights}<span class="lbl">Lights</span></button>
           <button class="btn btn-ghost" id="ctrl-shortcuts" title="Keyboard shortcuts">${I.keys}<span class="lbl">Keys</span></button>
@@ -733,7 +772,9 @@ function buildEpGrid(){
   rg.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{epRange=+b.dataset.r;buildEpGrid()});
   g.classList.toggle('thumbs',epMode==='thumbs');
   g.innerHTML='';
-  const seen=getWatched(),posMap=ls.get(posKey(),{});
+  const seen=getWatched(),posMap=Object.assign({},ls.get(posKey(),{}));
+  {const est=estLoad(),d=estDur();for(const k in est)if(!posMap[k])posMap[k]=[est[k],d]}
+  const wb=$('ctrl-watched');if(wb){const on=seen.has(curEp);wb.classList.toggle('on',on);wb.querySelector('.lbl').textContent=on?'Watched':'Mark watched'}
   const from=epRange*CH+1,to=Math.min(totalEps,from+CH-1);
   const frag=document.createDocumentFragment();
   for(let i=from;i<=to;i++){
@@ -813,6 +854,31 @@ function offerResume(){
   toast(`Resume from ${fmtClock(t)}?`,'info',{label:'Resume',fn:()=>seekPlayer(t)});
 }
 
+
+/* ── Watch-time estimate for servers that don't report playback ── */
+const estKey=()=>`mest_${ANIME_ID}`;
+const estDur=()=>((animeData&&animeData.duration)||24)*60;
+let estMap=null,estTouched=false,estSince=0;
+function estLoad(){if(!estMap)estMap=ls.get(estKey(),{});return estMap}
+window.addEventListener('blur',()=>{setTimeout(()=>{const f=$('player');if(f&&document.activeElement===f)estTouched=true},0)});
+setInterval(()=>{
+  if(gotEvent||document.hidden||!estTouched||!animeData)return;
+  const m=estLoad(),d=estDur();
+  m[curEp]=Math.min((m[curEp]||0)+1,d);
+  const mt=$('meta-time');if(mt){mt.style.display='';mt.textContent=`~${fmtClock(m[curEp])} / ${fmtClock(d)}`;mt.title='Estimated from time spent on the player'}
+  if(++estSince<10)return;
+  estSince=0;ls.set(estKey(),m);
+  updateCwProgress(m[curEp],d);
+  if(m[curEp]/d>=.8&&!getWatched().has(curEp))markWatched(curEp);
+  updateEpBtns();
+},1000);
+function toggleWatched(){
+  const s=new Set(ls.get(watchedKey(),[]));
+  if(s.has(curEp)){s.delete(curEp);ls.set(watchedKey(),[...s]);const m=estLoad();delete m[curEp];ls.set(estKey(),m);const p=ls.get(posKey(),{});delete p[curEp];ls.set(posKey(),p);toast(`Episode ${pad(curEp)} marked unwatched`)}
+  else{markWatched(curEp);toast(`Episode ${pad(curEp)} marked watched`,'ok')}
+  updateEpBtns();
+}
+
 /* ── Navigation ── */
 function goEp(ep){
   if(ep===curEp)return;
@@ -822,7 +888,7 @@ function goEp(ep){
   if(Math.floor((ep-1)/CH)!==epRange){epRange=Math.floor((ep-1)/CH);buildEpGrid()}else updateEpBtns();
   reloadPlayer();
   $('meta-ep').textContent=pad(ep);$('hdr-ep').textContent=`EP ${pad(ep)}`;
-  document.title=`${T(animeData)} — EP ${pad(ep)} · MARSELO ANIME`;
+  tabTitle(`${T(animeData)} — EP ${pad(ep)} · MARSELO ANIME`);
   history.replaceState(null,'',`?id=${ANIME_ID}&ep=${ep}`);
   toast(`Episode ${pad(ep)}`,'info');
   saveHistory(animeData);
@@ -830,7 +896,9 @@ function goEp(ep){
   if(!matchMedia('(max-width:1100px)').matches||window.scrollY>300)window.scrollTo({top:0,behavior:'smooth'});
 }
 function updateEpBtns(){
-  const seen=getWatched(),posMap=ls.get(posKey(),{});
+  const seen=getWatched(),posMap=Object.assign({},ls.get(posKey(),{}));
+  {const est=estLoad(),d=estDur();for(const k in est)if(!posMap[k])posMap[k]=[est[k],d]}
+  const wb=$('ctrl-watched');if(wb){const on=seen.has(curEp);wb.classList.toggle('on',on);wb.querySelector('.lbl').textContent=on?'Watched':'Mark watched'}
   document.querySelectorAll('#ep-grid [data-ep]').forEach(b=>{
     const ep=+b.dataset.ep,isActive=ep===curEp,isSeen=seen.has(ep)&&!isActive;
     b.classList.toggle('on',isActive);b.classList.toggle('seen',isSeen);
@@ -843,9 +911,10 @@ function updateEpBtns(){
   if(p)p.disabled=curEp<=1;if(n)n.disabled=curEp>=totalEps||(gateEps&&curEp>=airedEps);
 }
 function reloadPlayer(){
+  estTouched=false;
   const f=$('player'),l=$('ploading');if(!f)return;
   f.style.opacity='0.4';
-  setTimeout(()=>{if(l)l.classList.remove('gone');f.src=embedUrl(ANIME_ID,curEp,fmt,server);f.style.opacity='1'},150);
+  setTimeout(()=>{if(l)l.classList.remove('gone');if(sandboxFor(server))f.setAttribute('sandbox',SANDBOX);else f.removeAttribute('sandbox');f.src=embedUrl(ANIME_ID,curEp,fmt,server);f.style.opacity='1'},150);
   const s=$('meta-status');if(s){s.textContent='Buffering';s.className='st'}
   const srv=$('loader-srv');if(srv)srv.textContent=(SERVERS.find(x=>x.id===server)||{}).label?.replace(/[^\w ]/g,'').trim()||'stream';
   const w=$('pwrap');if(w)w.classList.remove('playing');
@@ -896,6 +965,7 @@ function wireControls(){
     toast(`Auto Next ${cfgAutoNext?'enabled':'disabled'}`,'ok');
     if(!cfgAutoNext)hideUpnext();
   });
+  $('ctrl-watched').addEventListener('click',toggleWatched);
   $('ctrl-theater').addEventListener('click',toggleTheater);
   $('ctrl-lights').addEventListener('click',toggleLights);
   $('ctrl-shortcuts').addEventListener('click',()=>$('shortcuts-modal').classList.add('open'));
@@ -920,7 +990,7 @@ function wireControls(){
 
   $('btn-share').addEventListener('click',async()=>{
     const url=location.href.split('#')[0];
-    if(navigator.share&&isTouch){try{await navigator.share({title:document.title,url});return}catch(e){}}
+    if(navigator.share&&isTouch){try{await navigator.share({title:window.__baseTitle||document.title,url});return}catch(e){}}
     try{await navigator.clipboard.writeText(url);toast('Link copied','ok')}catch{toast('Could not copy link','err')}
   });
   $('hdr-fav').addEventListener('click',()=>{

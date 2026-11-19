@@ -974,6 +974,16 @@
       .presets { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none }
       .presets::-webkit-scrollbar { display: none }
       .preset { flex-shrink: 0 }
+      /* continue watching: one swipeable row of small cards instead of giant full-width ones */
+      .cw-row { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; margin: 0 -4px; padding: 4px }
+      .cw-row::-webkit-scrollbar { display: none }
+      .cw-card { flex: 0 0 132px; scroll-snap-align: start }
+      .cw-info { padding: 9px 10px 10px }
+      .cw-title { font-size: 11.5px; margin-bottom: 4px }
+      .cw-sub { font-size: 10px; margin-bottom: 7px }
+      .cw-play { display: none }
+      .cw-remove { opacity: 1; width: 24px; height: 24px }
+      .cw-ep-badge { top: 7px; left: 7px; font-size: 9.5px; padding: 2px 7px }
       .filters .genre-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px }
       .filters .genre-chips::-webkit-scrollbar { display: none }
       .g-chip { flex-shrink: 0 }
@@ -1453,12 +1463,36 @@
     };
     const hexRgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
     const mix = (h, t, p) => { const a = hexRgb(h); return '#' + a.map(c => Math.round(c + (t - c) * p).toString(16).padStart(2, '0')).join(''); };
+
+    /* ── Logo + favicon follow the accent colour ── */
+    let _brandKey='';
+    function brandSvg(a,b){
+      const lt=mix(a,255,.22),dk=mix(a,0,.18),m='M70 184 V86 Q70 70 84 78 L128 128 L172 78 Q186 70 186 86 V184';
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a1524"/><stop offset="1" stop-color="#07070d"/></linearGradient><radialGradient id="glow" cx="50%" cy="46%" r="50%"><stop offset="0" stop-color="${a}" stop-opacity=".42"/><stop offset="1" stop-color="${a}" stop-opacity="0"/></radialGradient><linearGradient id="m" x1="64" y1="70" x2="192" y2="190" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${b}"/><stop offset=".5" stop-color="${a}"/><stop offset="1" stop-color="${dk}"/></linearGradient><linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${b}" stop-opacity=".75"/><stop offset=".5" stop-color="${a}" stop-opacity=".12"/><stop offset="1" stop-color="${a}" stop-opacity=".55"/></linearGradient><linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".14"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="sq"><rect x="8" y="8" width="240" height="240" rx="64"/></clipPath></defs><rect x="8" y="8" width="240" height="240" rx="64" fill="url(#bg)"/><g clip-path="url(#sq)"><rect width="256" height="256" fill="url(#glow)"/><rect x="8" y="8" width="240" height="120" fill="url(#sheen)"/></g><rect x="9.5" y="9.5" width="237" height="237" rx="62.5" fill="none" stroke="url(#ring)" stroke-width="3"/><path d="${m}" fill="none" stroke="${a}" stroke-opacity=".35" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 4)"/><path d="${m}" fill="none" stroke="url(#m)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
+    function setFavicon(href,type){
+      const old=document.querySelector('link[rel="icon"]');
+      const l=document.createElement('link');l.rel='icon';l.type=type;l.href=href;
+      if(old)old.replaceWith(l);else document.head.appendChild(l);
+    }
+    function applyBrand(name,a,b){
+      if(a===_brandKey)return;_brandKey=a;
+      if(name==='orange'){document.querySelectorAll('.logo-mark').forEach(i=>i.src='marselo.ico');setFavicon('marselo.ico','image/x-icon');return}
+      const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(brandSvg(a,b));
+      document.querySelectorAll('.logo-mark').forEach(i=>i.src=url);
+      const im=new Image();
+      im.onload=()=>{try{const c=document.createElement('canvas');c.width=c.height=64;c.getContext('2d').drawImage(im,0,0,64,64);setFavicon(c.toDataURL('image/png'),'image/png')}catch(e){setFavicon(url,'image/svg+xml')}};
+      im.onerror=()=>setFavicon(url,'image/svg+xml');
+      im.src=url;
+    }
+
     function applyAccent(name) {
       const [a, b] = ACCENTS[name] || ACCENTS.orange;
       const r = document.documentElement.style;
       r.setProperty('--accent', a); r.setProperty('--accent-2', b);
       r.setProperty('--accent-rgb', hexRgb(a).join(', ')); r.setProperty('--accent2-rgb', hexRgb(b).join(', '));
       r.setProperty('--accent-light', mix(a, 255, .22)); r.setProperty('--accent-dark', mix(a, 0, .18));
+      applyBrand(ACCENTS[name] ? name : 'orange', a, b);
       $$('.swatch').forEach(s => s.classList.toggle('on', s.dataset.a === name));
     }
     applyAccent(cfg.accent);
@@ -1582,6 +1616,17 @@
       return t;
     }
 
+
+/* ── Scrolling tab title ── */
+let _mqTimer=null;
+function tabTitle(text){
+  window.__baseTitle=text;clearInterval(_mqTimer);
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches){document.title=text;return}
+  const s=(text+'   •   ').replace(/ /g,' ');let i=0;
+  const step=()=>{document.title=s.slice(i)+s.slice(0,i);i=(i+1)%s.length};
+  step();_mqTimer=setInterval(step,260);
+}
+
     const MODALS = ['detail-modal', 'discord-modal', 'settings-modal', 'shortcuts-modal', 'auth-modal'];
     let lastFocus = null;
     function openModal(id) {
@@ -1595,7 +1640,7 @@
     function closeModal(id) {
       const el = $(id);
       if (!el || !el.classList.contains('show') || el.classList.contains('closing')) return;
-      if (id === 'detail-modal') { const b = $('detail-body'); const bn = b.querySelector('.d-banner'); if (bn) bn.classList.remove('playing'); const fr = b.querySelector('.d-trailer'); if (fr) fr.innerHTML = ''; }
+      if (id === 'detail-modal') { tabTitle(`${VIEW_NAMES[currentView] || 'Home'} · MARSELO ANIME`); const b = $('detail-body'); const bn = b.querySelector('.d-banner'); if (bn) bn.classList.remove('playing'); const fr = b.querySelector('.d-trailer'); if (fr) fr.innerHTML = ''; }
       el.classList.add('closing');
       setTimeout(() => {
         el.classList.remove('show', 'closing');
@@ -1785,6 +1830,7 @@
     const VIEWS = ['home', 'browse', 'popular', 'tv', 'movie', 'schedule', 'history', 'favorites'];
     const VIEW_NAMES = { home: 'Home', browse: 'Browse', popular: 'Popular', tv: 'TV Series', movie: 'Movies', schedule: 'Schedule', history: 'History', favorites: 'Favorites' };
     let currentView = 'home', switching = false, favTab = 'favs';
+    tabTitle('Home · MARSELO ANIME');
     const loaded = {};
 
     const prismA = document.createElement('div'), prismB = document.createElement('div');
@@ -1805,6 +1851,7 @@
       if (a.scrollIntoView && nav.scrollWidth > nav.clientWidth) a.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
     }
     function markNav(view) {
+      if (!$('detail-modal').classList.contains('show')) tabTitle(`${VIEW_NAMES[view] || 'Home'} · MARSELO ANIME`);
       $$('.nav-link').forEach(b => b.classList.toggle('active', b.dataset.view === view));
       $$('#mnav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
       updateIndicator();
@@ -2261,6 +2308,7 @@
     function renderDetail(a) {
       const body = $('detail-body');
       const title = T(a), alt = T2(a);
+      tabTitle(`${title} · MARSELO ANIME`);
       const cw = cwMap().get(a.id);
       const seen = historyFor(a.id);
       const sEdges = (a.allStudios && a.allStudios.edges) || (a.studios && a.studios.nodes || []).map(n => ({ isMain: true, node: n }));
