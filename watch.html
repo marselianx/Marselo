@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#04040a">
-<link rel="icon" type="image/x-icon" href="https://i.ibb.co/mQYwYDN/marseloanime.png">
+<link rel="icon" type="image/x-icon" href="marselo.ico">
 <title>Watch — MARSELO ANIME</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
   --accent-rgb:255,122,26;--accent2-rgb:255,176,46;
   --gold:#f4c430;--green:#39d98a;--text:#f0eee8;--muted:#8b8a99;--muted-2:#3a3944;
   --ease:cubic-bezier(.16,1,.3,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);
-  --glass:rgba(255,255,255,.055);--glass-blur:blur(28px) saturate(170%);
+  --glass:rgba(255,255,255,.055);--glass-blur:blur(18px) saturate(150%);
   --panel-shadow:0 24px 60px -30px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.07),inset 0 1px 0 rgba(255,255,255,.09);
   --radius:22px;--radius-sm:12px;--radius-xs:8px;--sidebar-w:360px
 }
@@ -58,7 +58,7 @@ header::before{content:'';position:absolute;inset:0;border-radius:inherit;paddin
 @keyframes hdrIn{from{opacity:0;transform:translateY(-24px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes sheen{to{background-position:260% 0}}
 .logo{display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0}
-.logo-mark{width:32px;height:32px;object-fit:contain;filter:hue-rotate(30deg) drop-shadow(0 0 10px rgba(var(--accent-rgb),.55));transition:transform .5s var(--ease-spring)}
+.logo-mark{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(var(--accent-rgb),.55));transition:transform .5s var(--ease-spring)}
 .logo:hover .logo-mark{transform:scale(1.15) rotate(-8deg)}
 .logo-text{font-family:'Bebas Neue';font-size:24px;letter-spacing:.06em;color:var(--text)}
 .logo-text em,.f-logo em{color:var(--accent);font-style:normal}
@@ -329,6 +329,17 @@ body.lights-on .watch-layout{position:relative;z-index:170}
 body.lights-on .main-col>*:not(.player-wrap):not(.ctrl-bar),body.lights-on .sidebar{opacity:.06;pointer-events:none}
 body.lights-on .ctrl-bar{opacity:.5}
 
+/* ── motion + performance layer ── */
+.bg-blob{filter:none}
+body.anim-paused .bg-blob,body.anim-paused header::before{animation-play-state:paused}
+@keyframes popIn{from{opacity:0;transform:translateY(14px) scale(.96)}}
+.stg>*{animation:popIn .55s var(--ease) backwards;animation-delay:calc(var(--i,0)*40ms)}
+.rv{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.rv.in{opacity:1;transform:none}
+.sug-card:active,.season-card:active,.ep-card:active{transform:scale(.975)}
+.ripple{position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.32);transform:scale(0);animation:rippleOut .65s var(--ease) forwards}
+@keyframes rippleOut{to{transform:scale(1);opacity:0}}
+
 /* ── footer ── */
 footer{margin-top:70px;border-top:1px solid var(--border);padding:28px 5vw;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;background:var(--surface)}
 .f-logo{font-family:'Bebas Neue';font-size:19px;letter-spacing:.06em;color:var(--muted)}
@@ -348,7 +359,7 @@ footer nav a:hover{color:var(--text)}
 
 <header>
   <a href="https://anime.marse.lol" class="logo">
-    <img src="https://i.ibb.co/mQYwYDN/marseloanime.png" class="logo-mark" alt="">
+    <img src="marselo.ico" class="logo-mark" alt="">
     <span class="logo-text">MARSELO <em>ANIME</em></span>
   </a>
   <div class="hdr-mid">
@@ -402,7 +413,7 @@ footer nav a:hover{color:var(--text)}
 const params  = new URLSearchParams(location.search);
 const ANIME_ID= parseInt(params.get('id'))||null;
 const START_EP= parseInt(params.get('ep'))||1;
-const LOGO='https://i.ibb.co/mQYwYDN/marseloanime.png';
+const LOGO='marselo.ico';
 const $=id=>document.getElementById(id);
 const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
@@ -577,7 +588,7 @@ function buildPage(a){
       <div class="mobile-slot" id="mobile-slot"></div>
 
       <div class="panel anime-info">
-        ${a.coverImage&&a.coverImage.large?`<div class="anime-poster"><img src="${esc(a.coverImage.extraLarge||a.coverImage.large)}" alt="${esc(title)}" loading="lazy" style="background:${esc(a.coverImage.color||'var(--surface-2)')}"></div>`:''}
+        ${a.coverImage&&a.coverImage.large?`<div class="anime-poster"><img src="${esc(a.coverImage.extraLarge||a.coverImage.large)}" alt="${esc(title)}" loading="lazy" decoding="async" style="background:${esc(a.coverImage.color||'var(--surface-2)')}"></div>`:''}
         <div class="anime-meta">
           <div class="anime-title">${esc(title)}</div>
           <div class="anime-alt">${alt?`<span>${esc(alt)}</span>`:''}${a.title.native&&a.title.native!==title?`<span>${esc(a.title.native)}</span>`:''}<span class="studio">${esc(studio)}</span></div>
@@ -644,6 +655,15 @@ function buildPage(a){
   loadSuggestions(a);
   initComments(a);
   placeEpisodesPanel();
+  revealPanels();
+}
+
+/* ── motion helpers ── */
+function stagger(c){if(!c)return;[...c.children].slice(0,40).forEach((k,i)=>k.style.setProperty('--i',i));c.classList.remove('stg');void c.offsetWidth;c.classList.add('stg')}
+function revealPanels(){
+  const els=document.querySelectorAll('.anime-info,.sec');if(!('IntersectionObserver' in window))return;
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -30px 0px'});
+  els.forEach(el=>{el.classList.add('rv');io.observe(el)});
 }
 
 /* ── Voice cast ── */
@@ -655,9 +675,10 @@ function buildVoiceCast(edges){
   entries.forEach(e=>{
     const va=e.voiceActors[0],ch=e.node;
     const card=document.createElement('div');card.className='va-card';card.title=`${va.name.full} as ${ch.name.full}`;
-    card.innerHTML=`<div class="va-avatar-wrap">${va.image&&va.image.large?`<img src="${esc(va.image.large)}" alt="" loading="lazy">`:'<img alt="">'}${ch.image&&ch.image.large?`<div class="char-avatar"><img src="${esc(ch.image.large)}" alt="" loading="lazy"></div>`:''}</div><div class="va-name">${esc(va.name.full)}</div><div class="va-char">${esc(ch.name.full)}${e.role==='MAIN'?' · Main':''}</div>`;
+    card.innerHTML=`<div class="va-avatar-wrap">${va.image&&va.image.large?`<img src="${esc(va.image.large)}" alt="" loading="lazy" decoding="async">`:'<img alt="">'}${ch.image&&ch.image.large?`<div class="char-avatar"><img src="${esc(ch.image.large)}" alt="" loading="lazy" decoding="async"></div>`:''}</div><div class="va-name">${esc(va.name.full)}</div><div class="va-char">${esc(ch.name.full)}${e.role==='MAIN'?' · Main':''}</div>`;
     grid.appendChild(card);
   });
+  stagger(grid);
 }
 
 /* ── Episodes ── */
@@ -689,7 +710,7 @@ function buildEpGrid(){
     b.dataset.ep=i;
     if(epMode==='thumbs'&&s){
       b.className=`ep-card${isActive?' on':isSeen?' seen':''}${soon?' soon':''}`;
-      b.innerHTML=`<img src="${esc(s.thumbnail)}" alt="" loading="lazy"><span class="n">EP ${i}${soon?' · soon':''}</span><div class="t">${esc((s.title||'').replace(/^episode\s*\d+\s*[-–:]\s*/i,''))}</div>`;
+      b.innerHTML=`<img src="${esc(s.thumbnail)}" alt="" loading="lazy" decoding="async"><span class="n">EP ${i}${soon?' · soon':''}</span><div class="t">${esc((s.title||'').replace(/^episode\s*\d+\s*[-–:]\s*/i,''))}</div>`;
       if(soon)b.disabled=true;
     }else{
       b.className=`ep-btn${isActive?' on':isSeen?' seen':''}${soon?' soon':''}`;
@@ -702,6 +723,7 @@ function buildEpGrid(){
     frag.appendChild(b);
   }
   g.appendChild(frag);
+  if(!window.__epStg){window.__epStg=1;stagger(g)}
   scrollEpIntoView();
   const f=$('ep-filter');if(f&&f.value)f.dispatchEvent(new Event('input'));
   const c=$('ep-count');if(c)c.textContent=`${seen.size?seen.size+' watched · ':''}${totalEps} total`;
@@ -724,18 +746,17 @@ function buildSeasonsList(){
     const card=document.createElement('div');card.className=`season-card${s.current?' on':''}`;
     const seasonLabel=s.season&&s.year?`${cap(s.season)} ${s.year}`:s.year||'';
     const relLabel=s.rel?s.rel.replace(/_/g,' '):'';
-    card.innerHTML=`${s.cover?`<img class="season-thumb" src="${esc(s.cover)}" loading="lazy" alt="" style="background:${esc(s.color||'var(--surface-2)')}">`:`<div class="season-thumb"></div>`}<div class="season-info"><div class="season-name">${esc(s.title)}</div><div class="season-meta">${seasonLabel?`<span>${esc(seasonLabel)}</span>`:''}${s.eps?`<span>${s.eps} eps</span>`:''}${s.score?`<span>★ ${s.score}%</span>`:''}</div></div>${s.current?'<span class="season-badge">Now</span>':relLabel?`<span class="season-badge">${esc(relLabel)}</span>`:''}`;
+    card.innerHTML=`${s.cover?`<img class="season-thumb" src="${esc(s.cover)}" loading="lazy" decoding="async" alt="" style="background:${esc(s.color||'var(--surface-2)')}">`:`<div class="season-thumb"></div>`}<div class="season-info"><div class="season-name">${esc(s.title)}</div><div class="season-meta">${seasonLabel?`<span>${esc(seasonLabel)}</span>`:''}${s.eps?`<span>${s.eps} eps</span>`:''}${s.score?`<span>★ ${s.score}%</span>`:''}</div></div>${s.current?'<span class="season-badge">Now</span>':relLabel?`<span class="season-badge">${esc(relLabel)}</span>`:''}`;
     if(!s.current)card.addEventListener('click',()=>{window.location.href=`watch?id=${s.id}&ep=1`});
     list.appendChild(card);
   });
+  stagger(list);
 }
 
 /* ── Watched / progress ── */
 function watchedKey(){return`mwe_${ANIME_ID}`}
 function getWatched(){
-  const s=new Set(ls.get(watchedKey(),[]));
-  (ls.get('mwh',[])||[]).forEach(h=>{if(+h.animeId===ANIME_ID&&h.episode!==curEp)s.add(+h.episode)});
-  return s;
+  return new Set(ls.get(watchedKey(),[]));
 }
 function markWatched(ep){const s=new Set(ls.get(watchedKey(),[]));s.add(ep);ls.set(watchedKey(),[...s])}
 const posKey=()=>`mpos_${ANIME_ID}`;
@@ -763,7 +784,7 @@ function offerResume(){
 function goEp(ep){
   if(ep===curEp)return;
   hideUpnext();
-  markWatched(curEp);curEp=ep;resumeOffered=false;lastCt=0;lastDur=0;
+  curEp=ep;resumeOffered=false;lastCt=0;lastDur=0;
   if(Math.floor((ep-1)/CH)!==epRange){epRange=Math.floor((ep-1)/CH);buildEpGrid()}else updateEpBtns();
   reloadPlayer();
   $('meta-ep').textContent=pad(ep);$('hdr-ep').textContent=`EP ${pad(ep)}`;
@@ -967,10 +988,11 @@ async function loadSuggestions(a){
   items.forEach(s=>{
     const t=T(s);
     const card=document.createElement('div');card.className='sug-card';
-    card.innerHTML=`<div class="sug-poster" style="--sc:${esc(s.coverImage.color||'')}"><img src="${esc(s.coverImage.large)}" loading="lazy" alt="${esc(t)}"><div class="sug-grad"></div><div class="sug-score">★ ${s.averageScore||'—'}</div></div><div class="sug-body"><div class="sug-title">${esc(t)}</div><div class="sug-sub">${s.episodes?s.episodes+' eps':'Ongoing'}</div></div>`;
+    card.innerHTML=`<div class="sug-poster" style="--sc:${esc(s.coverImage.color||'')}"><img src="${esc(s.coverImage.large)}" loading="lazy" decoding="async" alt="${esc(t)}"><div class="sug-grad"></div><div class="sug-score">★ ${s.averageScore||'—'}</div></div><div class="sug-body"><div class="sug-title">${esc(t)}</div><div class="sug-sub">${s.episodes?s.episodes+' eps':'Ongoing'}</div></div>`;
     card.addEventListener('click',()=>{window.location.href=`watch?id=${s.id}&ep=1`});
     g.appendChild(card);
   });
+  stagger(g);
 }
 
 /* ── History (shared with the home page) ── */
@@ -1017,6 +1039,19 @@ function initComments(a){
   const sc=document.createElement('script');sc.src='https://theanimecommunity.com/embed.js';sc.id='anime-community-script';sc.async=true;document.head.appendChild(sc);
 }
 
+document.addEventListener('pointerdown',e=>{
+  if(!cfg.fx)return;const b=e.target.closest&&e.target.closest('.btn');if(!b||b.disabled)return;
+  const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*2,el=document.createElement('span');
+  el.className='ripple';el.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;
+  b.appendChild(el);el.addEventListener('animationend',()=>el.remove());
+},{passive:true});
+(function(){
+  const b=document.body;let t=null;
+  const set=v=>b.classList.toggle('anim-paused',v);
+  addEventListener('scroll',()=>{if(!b.classList.contains('anim-paused'))set(true);clearTimeout(t);t=setTimeout(()=>set(document.hidden),160)},{passive:true});
+  document.addEventListener('visibilitychange',()=>set(document.hidden));
+})();
+
 /* ── scroll chrome ── */
 (function(){
   const hdr=document.querySelector('header'),tt=$('to-top');let last=0;
@@ -1033,7 +1068,6 @@ if(!ANIME_ID){
     if(!data.length){$('root').innerHTML=ERR('Anime Not Found','This title may have been removed from AniList, or AniList is unreachable right now.');return}
     buildPage(data[0]);
     toast(`Now playing: ${T(data[0])}`,'ok');
-    setTimeout(()=>{markWatched(curEp);updateEpBtns()},15000);
   });
 }
 
