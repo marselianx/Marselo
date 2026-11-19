@@ -942,6 +942,31 @@
     .ripple{position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.32);transform:scale(0);animation:rippleOut .65s var(--ease) forwards}
 @keyframes rippleOut{to{transform:scale(1);opacity:0}}
 
+    /* ═══ TOUCH / PHONE SMOOTHNESS ═══ */
+    @media (hover: none), (pointer: coarse) {
+      /* blur() inside animations re-rasterises a big layer every frame on phones: same motion, no blur */
+      @keyframes clip-in { 0% { opacity: 0; transform: translateY(60%) scale(1.04) } 100% { opacity: 1; transform: translateY(0) scale(1) } }
+      @keyframes wIn { from { opacity: 0; transform: translateY(46px) scale(.94) } to { opacity: 1; transform: none } }
+      @keyframes wOut { to { opacity: 0; transform: translateY(22px) scale(.97) } }
+      @keyframes dCover { from { opacity: 0; transform: translateX(-28px) scale(.9) rotate(-3deg) } to { opacity: 1; transform: none } }
+      @keyframes dUp { from { opacity: 0; transform: translateY(22px) } to { opacity: 1; transform: none } }
+      @keyframes tslide { from { transform: translateY(18px) scale(0.92); opacity: 0 } to { transform: translateY(0) scale(1); opacity: 1 } }
+      @keyframes tfade { from { opacity: 1; transform: scale(1) } to { opacity: 0; transform: translateY(10px) scale(0.94) } }
+      .loader-ambient { filter: none }
+      /* clip-path wipes are painted on the main thread: switch to transform / opacity (GPU) */
+      .prism { clip-path: none; transform: translateX(-105%); will-change: transform }
+      #page-transition { clip-path: none; opacity: 0; transition: opacity .4s var(--ease) }
+      #page-transition.active { clip-path: none; opacity: 1 }
+      /* a layer per card = memory pressure and checkerboarding while flinging */
+      .card-inner { will-change: auto }
+      /* :hover sticks after a tap on touch screens, leaving cards lifted */
+      .card:hover .card-inner { transform: none; border-color: var(--border); box-shadow: none }
+      .card:hover .card-poster img { transform: scale(1); filter: none }
+      .card:hover .card-inner::after { transform: translateX(-120%) }
+      .card:hover .card-glow { opacity: 0 }
+      .card:active .card-inner { transform: scale(.97); transition-duration: .15s }
+    }
+
     /* ═══ REDUCED MOTION ═══ */
     @media(prefers-reduced-motion:reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important }
@@ -1727,6 +1752,9 @@
     prismA.className = 'prism prism-a'; prismB.className = 'prism prism-b'; prismB.innerHTML = '<span class="prism-label"></span>';
     prismA.style.visibility = prismB.style.visibility = 'hidden';
     document.body.append(prismA, prismB);
+    const PRISM_T = { hide: 'translateX(-105%)', full: 'translateX(0)', gone: 'translateX(105%)' };
+    const PROP = isTouch ? 'transform' : 'clipPath', PR = isTouch ? PRISM_T : null;
+    const BL = v => isTouch ? {} : { filter: v };
     const PRISM = { hide: 'polygon(0 0,0 0,-35% 100%,-35% 100%)', full: 'polygon(0 0,135% 0,100% 100%,-35% 100%)', gone: 'polygon(135% 0,135% 0,135% 100%,135% 100%)' };
 
     function updateIndicator() {
@@ -1770,19 +1798,19 @@
       prismB.querySelector('.prism-label').textContent = VIEW_NAMES[view] || '';
       const run = (el, frames, o) => el.animate(frames, Object.assign({ easing: 'cubic-bezier(.76,0,.24,1)', fill: 'forwards' }, o, { duration: o.duration * k, delay: (o.delay || 0) * k })).finished;
       const cur = $(`${prev}-view`);
-      if (cur && k) cur.animate([{ opacity: 1, transform: 'none', filter: 'blur(0)' }, { opacity: 0, transform: 'translateY(-24px) scale(.98)', filter: 'blur(10px)' }], { duration: 320, easing: 'ease-in', fill: 'forwards' });
+      if (cur && k) cur.animate([{ opacity: 1, transform: 'none', ...BL('blur(0)') }, { opacity: 0, transform: 'translateY(-24px) scale(.98)', ...BL('blur(10px)') }], { duration: 320, easing: 'ease-in', fill: 'forwards' });
       return Promise.all([
-        run(prismA, [{ clipPath: PRISM.hide }, { clipPath: PRISM.full }], { duration: 430 }),
-        run(prismB, [{ clipPath: PRISM.hide }, { clipPath: PRISM.full }], { duration: 430, delay: 70 })
+        run(prismA, [{ [PROP]: (PR || PRISM).hide }, { [PROP]: (PR || PRISM).full }], { duration: 430 }),
+        run(prismB, [{ [PROP]: (PR || PRISM).hide }, { [PROP]: (PR || PRISM).full }], { duration: 430, delay: 70 })
       ]).then(() => {
         showViewEl(view);
         const nv = $(`${view}-view`);
-        if (nv && k) nv.animate([{ opacity: 0, transform: 'translateY(40px)', filter: 'blur(12px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 750, delay: 110, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'backwards' });
+        if (nv && k) nv.animate([{ opacity: 0, transform: 'translateY(40px)', ...BL('blur(12px)') }, { opacity: 1, transform: 'none', ...BL('blur(0)') }], { duration: 750, delay: 110, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'backwards' });
         try { lenis.scrollTo(0, { immediate: true }); } catch (e) { window.scrollTo(0, 0); }
         runLoader(view, force);
         return Promise.all([
-          run(prismB, [{ clipPath: PRISM.full }, { clipPath: PRISM.gone }], { duration: 500, delay: 90 }),
-          run(prismA, [{ clipPath: PRISM.full }, { clipPath: PRISM.gone }], { duration: 500, delay: 190 })
+          run(prismB, [{ [PROP]: (PR || PRISM).full }, { [PROP]: (PR || PRISM).gone }], { duration: 500, delay: 90 }),
+          run(prismA, [{ [PROP]: (PR || PRISM).full }, { [PROP]: (PR || PRISM).gone }], { duration: 500, delay: 190 })
         ]);
       }).finally(() => { prismA.getAnimations().forEach(x => x.cancel()); prismB.getAnimations().forEach(x => x.cancel()); prismA.style.visibility = prismB.style.visibility = 'hidden'; switching = false; });
     }
@@ -1808,7 +1836,7 @@
       if (filtered) clearGenre();
       switchView('home');
     }
-    window.addEventListener('resize', updateIndicator);
+    let navW = innerWidth; window.addEventListener('resize', () => { if (isTouch && innerWidth === navW) return; navW = innerWidth; updateIndicator(); });
     document.fonts && document.fonts.ready.then(updateIndicator);
     window.addEventListener('load', () => setTimeout(updateIndicator, 80));
 
@@ -2822,8 +2850,8 @@
       const rgb = () => { const cs = getComputedStyle(document.documentElement); return [cs.getPropertyValue('--accent-rgb').trim() || '255,122,26', cs.getPropertyValue('--accent2-rgb').trim() || '255,176,46', '244,196,48', '240,238,232']; };
       let cols = rgb();
       const mk = init => { const z = Math.random(), r = Math.random(); return { x: Math.random() * (W + 300), y: init ? Math.random() * H : -80, len: 36 + z * 110, sp: 130 + z * 340, w: .5 + z * 1.2, a: .14 + z * .34, c: r < .42 ? 0 : r < .8 ? 1 : r < .92 ? 2 : 3 }; };
-      const size = () => { const d = 1; W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0); drops = Array.from({ length: Math.round(Math.min(170, W / 8)) }, () => mk(true)); };
-      size(); addEventListener('resize', size);
+      const size = () => { const d = 1; W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0); drops = Array.from({ length: Math.round(Math.min(isTouch ? 70 : 170, W / 8)) }, () => mk(true)); };
+      size(); let rainW = innerWidth; addEventListener('resize', () => { if (isTouch && innerWidth === rainW) return; rainW = innerWidth; size(); });
       const frame = t => {
         if (!running) return;
         const dt = Math.min(.05, (t - last) / 1000); last = t;
@@ -2858,7 +2886,7 @@ document.addEventListener('pointerdown',e=>{
 (function(){
   const b=document.body;let t=null;
   const set=v=>b.classList.toggle('anim-paused',v);
-  addEventListener('scroll',()=>{if(!b.classList.contains('anim-paused'))set(true);clearTimeout(t);t=setTimeout(()=>set(document.hidden),160)},{passive:true});
+  if(!isTouch)addEventListener('scroll',()=>{if(!b.classList.contains('anim-paused'))set(true);clearTimeout(t);t=setTimeout(()=>set(document.hidden),160)},{passive:true});
   document.addEventListener('visibilitychange',()=>set(document.hidden));
   const hs=document.getElementById('hero-section');
   if(hs&&'IntersectionObserver' in window)new IntersectionObserver(([e])=>b.classList.toggle('hero-off',!e.isIntersecting)).observe(hs);

@@ -340,6 +340,15 @@ body.anim-paused .bg-blob,body.anim-paused header::before{animation-play-state:p
 .ripple{position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.32);transform:scale(0);animation:rippleOut .65s var(--ease) forwards}
 @keyframes rippleOut{to{transform:scale(1);opacity:0}}
 
+@media (hover:none),(pointer:coarse){
+  .stg>*{animation-delay:calc(var(--i,0)*16ms);animation-duration:.4s}
+  .rv{transition-duration:.45s}
+  .sug-card:hover{transform:none;box-shadow:none;border-color:rgba(255,255,255,.08)}
+  .sug-card:hover .sug-poster img{transform:none}
+  .ep-btn:hover{transform:none;box-shadow:none}
+  .sug-card:active,.season-card:active,.ep-card:active,.ep-btn:active{transform:scale(.97)}
+}
+
 /* ── footer ── */
 footer{margin-top:70px;border-top:1px solid var(--border);padding:28px 5vw;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;background:var(--surface)}
 .f-logo{font-family:'Bebas Neue';font-size:19px;letter-spacing:.06em;color:var(--muted)}
@@ -1048,7 +1057,7 @@ document.addEventListener('pointerdown',e=>{
 (function(){
   const b=document.body;let t=null;
   const set=v=>b.classList.toggle('anim-paused',v);
-  addEventListener('scroll',()=>{if(!b.classList.contains('anim-paused'))set(true);clearTimeout(t);t=setTimeout(()=>set(document.hidden),160)},{passive:true});
+  if(!isTouch)addEventListener('scroll',()=>{if(!b.classList.contains('anim-paused'))set(true);clearTimeout(t);t=setTimeout(()=>set(document.hidden),160)},{passive:true});
   document.addEventListener('visibilitychange',()=>set(document.hidden));
 })();
 
